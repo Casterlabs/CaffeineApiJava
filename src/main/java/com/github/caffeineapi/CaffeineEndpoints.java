@@ -7,7 +7,9 @@ public class CaffeineEndpoints {
 
     // Formatted
     public static final String USERS = "https://api.caffeine.tv/v1/users/%s";
-    public static final String SIGNED = USERS + "/signed";
+    public static final String FOLLOWERS = "https://api.caffeine.tv/v2/users/%s/followers?limit=100&offset=%d";
+    public static final String FOLLOWING = "https://api.caffeine.tv/v2/users/%s/following?limit=100&offset=%d";
+    public static final String SIGNED = "https://api.caffeine.tv/v1/users/%s/signed";
     public static final String CHAT_MESSAGE = "https://realtime.caffeine.tv/v2/reaper/stages/%s/messages";
     public static final String UPVOTE_MESSAGE = "https://realtime.caffeine.tv/v2/reaper/messages/%s/endorsements";
 

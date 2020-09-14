@@ -1,12 +1,8 @@
 package com.github.caffeineapi.requests;
 
-import java.util.concurrent.CompletableFuture;
-
 import com.github.caffeineapi.CaffeineAuth;
 
-import lombok.SneakyThrows;
-
-public abstract class AuthenticatedWebRequest<T> {
+public abstract class AuthenticatedWebRequest<T> extends WebRequest<T> {
     private CaffeineAuth auth;
 
     public AuthenticatedWebRequest(CaffeineAuth auth) {
@@ -16,12 +12,5 @@ public abstract class AuthenticatedWebRequest<T> {
     protected CaffeineAuth getAuth() {
         return this.auth;
     }
-
-    @SneakyThrows
-    public final T sendBlocking() {
-        return this.send().get();
-    }
-
-    public abstract CompletableFuture<T> send();
 
 }

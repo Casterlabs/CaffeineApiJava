@@ -1,14 +1,11 @@
 package com.github.caffeineapi.requests;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 import com.github.caffeineapi.CaffeineAuth;
 import com.github.caffeineapi.CaffeineEndpoints;
 import com.github.caffeineapi.HttpUtil;
-import com.github.caffeineapi.ThreadHelper;
 import com.github.caffeineapi.exception.CaffeineAuthenticationException;
 import com.google.gson.annotations.SerializedName;
 
@@ -29,27 +26,17 @@ public class CaffeineUpvoteChatMessageRequest extends AuthenticatedWebRequest<Vo
     }
 
     @Override
-    public CompletableFuture<Void> send() {
-        CompletableFuture<Void> future = new CompletableFuture<>();
+    public Void send() throws Exception {
+        Map<String, String> headers = Collections.singletonMap("Authorization", "Bearer " + this.getAuth().getAccessToken());
+        Response response = HttpUtil.sendHttp("{}", String.format(CaffeineEndpoints.UPVOTE_MESSAGE, this.messageId), headers, "application/json");
 
-        ThreadHelper.executeAsync(() -> {
-            try {
-                Map<String, String> headers = Collections.singletonMap("Authorization", "Bearer " + this.getAuth().getAccessToken());
-                Response response = HttpUtil.sendHttp("{}", String.format(CaffeineEndpoints.UPVOTE_MESSAGE, this.messageId), headers, "application/json");
+        if (response.code() == 401) {
+            throw new CaffeineAuthenticationException("Unable to upvote a chat message due to an authentication error");
+        } else if (response.code() == 400) {
+            throw new IllegalArgumentException("Message id is invalid");
+        }
 
-                if (response.code() == 401) {
-                    future.completeExceptionally(new CaffeineAuthenticationException("Unable to upvote a chat message due to an authentication error"));
-                } else if (response.code() == 400) {
-                    future.completeExceptionally(new IllegalArgumentException("Message id is invalid"));
-                }
-
-                future.complete(null);
-            } catch (IOException e) {
-                future.completeExceptionally(e);
-            }
-        });
-
-        return future;
+        return null;
     }
 
     @Getter

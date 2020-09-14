@@ -2,15 +2,24 @@ package com.github.caffeineapi.requests;
 
 import java.util.concurrent.CompletableFuture;
 
-import lombok.SneakyThrows;
+import com.github.caffeineapi.ThreadHelper;
 
 public abstract class WebRequest<T> {
 
-    @SneakyThrows
-    public final T sendBlocking() {
-        return this.send().get();
-    }
+    public abstract T send() throws Exception;
 
-    public abstract CompletableFuture<T> send();
+    public final CompletableFuture<T> sendAsync() {
+        CompletableFuture<T> future = new CompletableFuture<>();
+
+        ThreadHelper.executeAsync(() -> {
+            try {
+                future.complete(this.send());
+            } catch (Exception e) {
+                future.completeExceptionally(e);
+            }
+        });
+
+        return future;
+    }
 
 }

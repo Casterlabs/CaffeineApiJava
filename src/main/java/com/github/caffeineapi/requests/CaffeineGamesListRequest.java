@@ -1,14 +1,11 @@
 package com.github.caffeineapi.requests;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import com.github.caffeineapi.CaffeineApi;
 import com.github.caffeineapi.CaffeineEndpoints;
 import com.github.caffeineapi.HttpUtil;
-import com.github.caffeineapi.ThreadHelper;
 import com.github.caffeineapi.exception.CaffeineApiException;
 import com.github.caffeineapi.requests.CaffeineGamesListRequest.CaffeineGame;
 import com.google.gson.JsonArray;
@@ -23,37 +20,27 @@ import okhttp3.Response;
 public class CaffeineGamesListRequest extends WebRequest<List<CaffeineGame>> {
 
     @Override
-    public CompletableFuture<List<CaffeineGame>> send() {
-        CompletableFuture<List<CaffeineGame>> future = new CompletableFuture<>();
+    public List<CaffeineGame> send() throws Exception {
+        Response response = HttpUtil.sendHttpGet(CaffeineEndpoints.GAMES_LIST, null);
+        String body = response.body().string();
+        JsonArray array = CaffeineApi.GSON.fromJson(body, JsonArray.class);
 
-        ThreadHelper.executeAsync(() -> {
+        List<CaffeineGame> list = new ArrayList<>();
+
+        for (JsonElement element : array) {
             try {
-                Response response = HttpUtil.sendHttpGet(CaffeineEndpoints.GAMES_LIST, null);
-                String body = response.body().string();
-                JsonArray array = CaffeineApi.GSON.fromJson(body, JsonArray.class);
+                CaffeineGame game = CaffeineApi.GSON.fromJson(element, CaffeineGame.class);
 
-                List<CaffeineGame> list = new ArrayList<>();
+                game.iconImagePath = CaffeineEndpoints.IMAGES + game.iconImagePath;
+                game.bannerImagePath = CaffeineEndpoints.IMAGES + game.bannerImagePath;
 
-                for (JsonElement element : array) {
-                    try {
-                        CaffeineGame game = CaffeineApi.GSON.fromJson(element, CaffeineGame.class);
-
-                        game.iconImagePath = CaffeineEndpoints.IMAGES + game.iconImagePath;
-                        game.bannerImagePath = CaffeineEndpoints.IMAGES + game.bannerImagePath;
-
-                        list.add(game);
-                    } catch (JsonSyntaxException e) {
-                        future.completeExceptionally(new CaffeineApiException(e, "Could not parse CaffeineGame", element.toString()));
-                    }
-                }
-
-                future.complete(list);
-            } catch (IOException e) {
-                future.completeExceptionally(e);
+                list.add(game);
+            } catch (JsonSyntaxException e) {
+                throw new CaffeineApiException(e, "Could not parse CaffeineGame", element.toString());
             }
-        });
+        }
 
-        return future;
+        return list;
     }
 
     @Getter

@@ -1,17 +1,14 @@
 package com.github.caffeineapi.requests;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 import com.github.caffeineapi.CaffeineApi;
 import com.github.caffeineapi.CaffeineAuth;
 import com.github.caffeineapi.CaffeineEndpoints;
 import com.github.caffeineapi.HttpUtil;
-import com.github.caffeineapi.ThreadHelper;
 import com.github.caffeineapi.exception.CaffeineApiException;
 import com.github.caffeineapi.exception.CaffeineAuthenticationException;
 import com.github.caffeineapi.requests.CaffeinePropsListRequest.CaffeineProp;
@@ -32,53 +29,43 @@ public class CaffeinePropsListRequest extends AuthenticatedWebRequest<List<Caffe
     }
 
     @Override
-    public CompletableFuture<List<CaffeineProp>> send() {
-        CompletableFuture<List<CaffeineProp>> future = new CompletableFuture<>();
+    public List<CaffeineProp> send() throws Exception {
+        Map<String, String> headers = new HashMap<>();
 
-        ThreadHelper.executeAsync(() -> {
-            try {
-                Map<String, String> headers = new HashMap<>();
+        headers.put("x-credential", this.getAuth().getCredential());
 
-                headers.put("x-credential", this.getAuth().getCredential());
+        Response response = HttpUtil.sendHttp("{}", CaffeineEndpoints.PROPS_LIST, headers, "application/json"); // Send empty json data, because it's required for some reason.
+        String body = response.body().string();
 
-                Response response = HttpUtil.sendHttp("{}", CaffeineEndpoints.PROPS_LIST, headers, "application/json"); // Send empty json data, because it's required for some reason.
-                String body = response.body().string();
+        if (response.code() == 401) {
+            throw new CaffeineAuthenticationException("Unable to get props list due to an authentication error", body);
+        } else {
+            JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
+            JsonObject payload = json.getAsJsonObject("payload");
+            JsonObject digitalItems = payload.getAsJsonObject("digital_items");
+            JsonArray state = digitalItems.getAsJsonArray("state");
 
-                if (response.code() == 401) {
-                    future.completeExceptionally(new CaffeineAuthenticationException("Unable to get props list due to an authentication error", body));
-                } else {
-                    JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
-                    JsonObject payload = json.getAsJsonObject("payload");
-                    JsonObject digitalItems = payload.getAsJsonObject("digital_items");
-                    JsonArray state = digitalItems.getAsJsonArray("state");
+            List<CaffeineProp> list = new ArrayList<>();
 
-                    List<CaffeineProp> list = new ArrayList<>();
+            for (JsonElement element : state) {
+                try {
+                    CaffeineProp prop = CaffeineApi.GSON.fromJson(element, CaffeineProp.class);
 
-                    for (JsonElement element : state) {
-                        try {
-                            CaffeineProp prop = CaffeineApi.GSON.fromJson(element, CaffeineProp.class);
+                    prop.previewImagePath = CaffeineEndpoints.ASSETS + prop.previewImagePath;
+                    prop.staticImagePath = CaffeineEndpoints.ASSETS + prop.staticImagePath;
+                    prop.webAssetPath = CaffeineEndpoints.ASSETS + prop.webAssetPath;
+                    prop.sceneKitPath = CaffeineEndpoints.ASSETS + prop.sceneKitPath;
 
-                            prop.previewImagePath = CaffeineEndpoints.ASSETS + prop.previewImagePath;
-                            prop.staticImagePath = CaffeineEndpoints.ASSETS + prop.staticImagePath;
-                            prop.webAssetPath = CaffeineEndpoints.ASSETS + prop.webAssetPath;
-                            prop.sceneKitPath = CaffeineEndpoints.ASSETS + prop.sceneKitPath;
+                    prop.credits = prop.goldCost * 3;
 
-                            prop.credits = prop.goldCost * 3;
-
-                            list.add(prop);
-                        } catch (JsonSyntaxException e) {
-                            future.completeExceptionally(new CaffeineApiException(e, "Could not parse CaffeineProp", element.toString()));
-                        }
-                    }
-
-                    future.complete(list);
+                    list.add(prop);
+                } catch (JsonSyntaxException e) {
+                    throw new CaffeineApiException(e, "Could not parse CaffeineProp", element.toString());
                 }
-            } catch (IOException e) {
-                future.completeExceptionally(e);
             }
-        });
 
-        return future;
+            return list;
+        }
     }
 
     @Getter

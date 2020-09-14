@@ -1,14 +1,11 @@
 package com.github.caffeineapi.requests;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 import com.github.caffeineapi.CaffeineAuth;
 import com.github.caffeineapi.CaffeineEndpoints;
 import com.github.caffeineapi.HttpUtil;
-import com.github.caffeineapi.ThreadHelper;
 import com.github.caffeineapi.exception.CaffeineAuthenticationException;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
@@ -20,9 +17,10 @@ import lombok.ToString;
 import lombok.experimental.Accessors;
 import okhttp3.Response;
 
+@Setter
 @Accessors(chain = true)
 public class CaffeineSendChatMessageRequest extends AuthenticatedWebRequest<Void> {
-    private @Setter @NonNull String stageId;
+    private @NonNull String stageId;
     private @NonNull String message;
 
     public CaffeineSendChatMessageRequest(CaffeineAuth auth) {
@@ -45,38 +43,28 @@ public class CaffeineSendChatMessageRequest extends AuthenticatedWebRequest<Void
     }
 
     @Override
-    public CompletableFuture<Void> send() {
-        CompletableFuture<Void> future = new CompletableFuture<>();
+    public Void send() throws Exception {
+        if ((this.message == null) || (this.stageId == null)) {
+            throw new NullPointerException("CAID or message is null.");
+        }
 
-        ThreadHelper.executeAsync(() -> {
-            try {
-                if ((this.message == null) || (this.stageId == null)) {
-                    future.completeExceptionally(new NullPointerException("CAID or message is null."));
-                }
+        Map<String, String> headers = Collections.singletonMap("Authorization", "Bearer " + this.getAuth().getAccessToken());
+        JsonObject post = new JsonObject();
+        JsonObject body = new JsonObject();
 
-                Map<String, String> headers = Collections.singletonMap("Authorization", "Bearer " + this.getAuth().getAccessToken());
-                JsonObject post = new JsonObject();
-                JsonObject body = new JsonObject();
+        body.addProperty("text", this.message);
 
-                body.addProperty("text", this.message);
+        post.addProperty("type", "reaction");
+        post.addProperty("publisher", this.getAuth().getSignedToken());
+        post.add("body", body);
 
-                post.addProperty("type", "reaction");
-                post.addProperty("publisher", this.getAuth().getSignedToken());
-                post.add("body", body);
+        Response response = HttpUtil.sendHttp(post.toString(), String.format(CaffeineEndpoints.CHAT_MESSAGE, this.stageId), headers, "application/json");
 
-                Response response = HttpUtil.sendHttp(post.toString(), String.format(CaffeineEndpoints.CHAT_MESSAGE, this.stageId), headers, "application/json");
+        if (response.code() == 401) {
+            throw new CaffeineAuthenticationException("Unable to send a chat message due to an authentication error");
+        }
 
-                if (response.code() == 401) {
-                    future.completeExceptionally(new CaffeineAuthenticationException("Unable to send a chat message due to an authentication error"));
-                }
-
-                future.complete(null);
-            } catch (IOException e) {
-                future.completeExceptionally(e);
-            }
-        });
-
-        return future;
+        return null;
     }
 
     @Getter
