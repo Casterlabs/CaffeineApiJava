@@ -1,14 +1,15 @@
-package com.github.caffeineapi.requests;
+package co.casterlabs.caffeineapi.requests;
 
-import java.util.Collections;
-import java.util.Map;
+import java.io.IOException;
 
-import com.github.caffeineapi.CaffeineAuth;
-import com.github.caffeineapi.CaffeineEndpoints;
-import com.github.caffeineapi.HttpUtil;
-import com.github.caffeineapi.exception.CaffeineAuthenticationException;
 import com.google.gson.annotations.SerializedName;
 
+import co.casterlabs.apiutil.auth.ApiAuthException;
+import co.casterlabs.apiutil.web.ApiException;
+import co.casterlabs.apiutil.web.AuthenticatedWebRequest;
+import co.casterlabs.caffeineapi.CaffeineAuth;
+import co.casterlabs.caffeineapi.CaffeineEndpoints;
+import co.casterlabs.caffeineapi.HttpUtil;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -18,7 +19,7 @@ import okhttp3.Response;
 
 @Setter
 @Accessors(chain = true)
-public class CaffeineUpvoteChatMessageRequest extends AuthenticatedWebRequest<Void> {
+public class CaffeineUpvoteChatMessageRequest extends AuthenticatedWebRequest<Void, CaffeineAuth> {
     private @NonNull String messageId;
 
     public CaffeineUpvoteChatMessageRequest(CaffeineAuth auth) {
@@ -26,12 +27,15 @@ public class CaffeineUpvoteChatMessageRequest extends AuthenticatedWebRequest<Vo
     }
 
     @Override
-    public Void send() throws Exception {
-        Map<String, String> headers = Collections.singletonMap("Authorization", "Bearer " + this.getAuth().getAccessToken());
-        Response response = HttpUtil.sendHttp("{}", String.format(CaffeineEndpoints.UPVOTE_MESSAGE, this.messageId), headers, "application/json");
+    protected Void execute() throws ApiException, ApiAuthException, IOException {
+        Response response = HttpUtil.sendHttp("{}", String.format(CaffeineEndpoints.UPVOTE_MESSAGE, this.messageId), this.auth, "application/json");
+
+        response.close();
 
         if (response.code() == 401) {
-            throw new CaffeineAuthenticationException("Unable to upvote a chat message due to an authentication error");
+            throw new ApiAuthException("Auth is invalid");
+        } else if (response.code() == 401) {
+            throw new ApiException("Unable to upvote a chat message due to an authentication error");
         } else if (response.code() == 400) {
             throw new IllegalArgumentException("Message id is invalid");
         }

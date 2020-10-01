@@ -1,13 +1,16 @@
-package com.github.caffeineapi.requests;
+package co.casterlabs.caffeineapi.requests;
 
-import com.github.caffeineapi.CaffeineApi;
-import com.github.caffeineapi.CaffeineEndpoints;
-import com.github.caffeineapi.HttpUtil;
-import com.github.caffeineapi.exception.CaffeineApiException;
-import com.github.caffeineapi.requests.CaffeineUserInfoRequest.CaffeineUser;
+import java.io.IOException;
+
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 
+import co.casterlabs.apiutil.web.ApiException;
+import co.casterlabs.apiutil.web.WebRequest;
+import co.casterlabs.caffeineapi.CaffeineApi;
+import co.casterlabs.caffeineapi.CaffeineEndpoints;
+import co.casterlabs.caffeineapi.HttpUtil;
+import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest.CaffeineUser;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -36,12 +39,14 @@ public class CaffeineUserInfoRequest extends WebRequest<CaffeineUser> {
     }
 
     @Override
-    public CaffeineUser send() throws Exception {
+    protected CaffeineUser execute() throws ApiException, IOException {
         Response response = HttpUtil.sendHttpGet(String.format(CaffeineEndpoints.USERS, this.query), null);
         String body = response.body().string();
 
+        response.close();
+
         if (response.code() == 404) {
-            throw new CaffeineApiException("User does not exist", body);
+            throw new ApiException("User does not exist: " + body);
         } else {
             JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
             JsonObject user = json.getAsJsonObject("user");

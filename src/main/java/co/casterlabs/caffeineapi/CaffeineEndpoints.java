@@ -1,4 +1,4 @@
-package com.github.caffeineapi;
+package co.casterlabs.caffeineapi;
 
 public class CaffeineEndpoints {
     // Prepend

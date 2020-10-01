@@ -1,8 +1,7 @@
-package com.github.caffeineapi;
+package co.casterlabs.caffeineapi;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -13,17 +12,17 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class HttpUtil {
+    private static OkHttpClient client = new OkHttpClient();
 
-    public static Response sendHttpGet(@NonNull String address, @Nullable Map<String, String> headers) throws IOException {
-        return sendHttp(null, null, address, headers, null);
+    public static Response sendHttpGet(@NonNull String address, @Nullable CaffeineAuth auth) throws IOException {
+        return sendHttp(null, null, address, auth, null);
     }
 
-    public static Response sendHttp(@NonNull String body, @NonNull String address, @Nullable Map<String, String> headers, @Nullable String mime) throws IOException {
-        return sendHttp(RequestBody.create(body.getBytes(StandardCharsets.UTF_8)), "POST", address, headers, mime);
+    public static Response sendHttp(@NonNull String body, @NonNull String address, @Nullable CaffeineAuth auth, @Nullable String mime) throws IOException {
+        return sendHttp(RequestBody.create(body.getBytes(StandardCharsets.UTF_8)), "POST", address, auth, mime);
     }
 
-    public static Response sendHttp(@Nullable RequestBody body, @Nullable String type, @NonNull String address, @Nullable Map<String, String> headers, @Nullable String mime) throws IOException {
-        OkHttpClient client = new OkHttpClient().newBuilder().proxy(CaffeineApi.getProxy()).build();
+    public static Response sendHttp(@Nullable RequestBody body, @Nullable String type, @NonNull String address, @Nullable CaffeineAuth auth, @Nullable String mime) throws IOException {
         Request.Builder builder = new Request.Builder().url(address);
 
         if ((body != null) && (type != null)) {
@@ -45,10 +44,8 @@ public class HttpUtil {
             }
         }
 
-        if (headers != null) {
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
-                builder.addHeader(entry.getKey(), entry.getValue());
-            }
+        if (auth != null) {
+            auth.authenticateRequest(builder);
         }
 
         if (mime != null) {

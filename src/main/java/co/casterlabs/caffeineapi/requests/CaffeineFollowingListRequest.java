@@ -1,26 +1,27 @@
-package com.github.caffeineapi.requests;
+package co.casterlabs.caffeineapi.requests;
 
+import java.io.IOException;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
-import com.github.caffeineapi.CaffeineApi;
-import com.github.caffeineapi.CaffeineAuth;
-import com.github.caffeineapi.CaffeineEndpoints;
-import com.github.caffeineapi.HttpUtil;
-import com.github.caffeineapi.exception.CaffeineAuthenticationException;
-import com.github.caffeineapi.requests.CaffeineFollowingListRequest.CaffeineFollowingResponse;
-import com.github.caffeineapi.requests.CaffeineUserInfoRequest.CaffeineUser;
 import com.google.gson.annotations.SerializedName;
 
+import co.casterlabs.apiutil.auth.ApiAuthException;
+import co.casterlabs.apiutil.web.ApiException;
+import co.casterlabs.apiutil.web.AuthenticatedWebRequest;
+import co.casterlabs.caffeineapi.CaffeineApi;
+import co.casterlabs.caffeineapi.CaffeineAuth;
+import co.casterlabs.caffeineapi.CaffeineEndpoints;
+import co.casterlabs.caffeineapi.HttpUtil;
+import co.casterlabs.caffeineapi.requests.CaffeineFollowingListRequest.CaffeineFollowingResponse;
+import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest.CaffeineUser;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import okhttp3.Response;
 
-public class CaffeineFollowingListRequest extends AuthenticatedWebRequest<CaffeineFollowingResponse> {
+public class CaffeineFollowingListRequest extends AuthenticatedWebRequest<CaffeineFollowingResponse, CaffeineAuth> {
     private String caid;
     private long offset = 0;
 
@@ -48,13 +49,16 @@ public class CaffeineFollowingListRequest extends AuthenticatedWebRequest<Caffei
     }
 
     @Override
-    public CaffeineFollowingResponse send() throws Exception {
-        Map<String, String> headers = Collections.singletonMap("Authorization", "Bearer " + this.getAuth().getAccessToken());
-        Response response = HttpUtil.sendHttpGet(String.format(CaffeineEndpoints.FOLLOWING, this.caid, this.offset), headers);
+    protected CaffeineFollowingResponse execute() throws ApiException, ApiAuthException, IOException {
+        Response response = HttpUtil.sendHttpGet(String.format(CaffeineEndpoints.FOLLOWING, this.caid, this.offset), this.auth);
         String body = response.body().string();
 
-        if (response.code() == 404) {
-            throw new CaffeineAuthenticationException("User does not exist", body);
+        response.close();
+
+        if (response.code() == 401) {
+            throw new ApiAuthException("Auth is invalid: " + body);
+        } else if (response.code() == 404) {
+            throw new ApiException("User does not exist: " + body);
         } else {
             return CaffeineApi.GSON.fromJson(body, CaffeineFollowingResponse.class);
         }

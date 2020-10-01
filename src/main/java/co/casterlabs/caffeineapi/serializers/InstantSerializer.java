@@ -1,4 +1,4 @@
-package com.github.caffeineapi.serializers;
+package co.casterlabs.caffeineapi.serializers;
 
 import java.lang.reflect.Type;
 import java.time.Instant;

@@ -1,7 +1,6 @@
-package com.github.caffeineapi;
+package co.casterlabs.caffeineapi;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -9,13 +8,16 @@ import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonObject;
 
+import co.casterlabs.apiutil.auth.ApiAuthException;
+import co.casterlabs.apiutil.auth.AuthProvider;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.SneakyThrows;
+import okhttp3.Request.Builder;
 import okhttp3.Response;
 
 @Getter
-public class CaffeineAuth {
+public class CaffeineAuth implements AuthProvider {
     private static final long REFRESH_TIME = TimeUnit.MINUTES.toMillis(10);
 
     private CaffeineAuthResponse authResponse;
@@ -48,7 +50,7 @@ public class CaffeineAuth {
         if (twoFactor != null) {
             JsonObject mfa = new JsonObject();
 
-            request.addProperty("opt", twoFactor);
+            mfa.addProperty("opt", twoFactor);
 
             request.add("mfa", mfa);
         }
@@ -64,12 +66,12 @@ public class CaffeineAuth {
         return sendAuth(CaffeineEndpoints.TOKEN, request);
     }
 
-    private CompletableFuture<CaffeineAuthResponse> sendAuth(String url, JsonObject requestBody) {
+    private CompletableFuture<CaffeineAuthResponse> sendAuth(String url, JsonObject payload) {
         CompletableFuture<CaffeineAuthResponse> future = new CompletableFuture<>();
 
         ThreadHelper.executeAsync(() -> {
             try {
-                Response authResponse = HttpUtil.sendHttp(requestBody.toString(), url, null, "application/json");
+                Response authResponse = HttpUtil.sendHttp(payload.toString(), url, null, "application/json");
 
                 if (authResponse.code() == 401) {
                     this.authResponse = CaffeineAuthResponse.INVALID;
@@ -87,18 +89,18 @@ public class CaffeineAuth {
                         this.caid = credentials.get("caid").getAsString();
                         this.credential = credentials.get("credential").getAsString();
 
-                        Response signedResponse = HttpUtil.sendHttpGet(String.format(CaffeineEndpoints.SIGNED, this.caid), Collections.singletonMap("Authorization", "Bearer " + this.accessToken));
+                        Response signedResponse = HttpUtil.sendHttpGet(String.format(CaffeineEndpoints.SIGNED, this.caid), this);
                         JsonObject signed = CaffeineApi.GSON.fromJson(signedResponse.body().string(), JsonObject.class);
 
                         this.signedToken = signed.get("token").getAsString();
 
                         final long expectedLoginTimestamp = this.loginTimestamp;
-                        ThreadHelper.executeLater(REFRESH_TIME, () -> {
+                        ThreadHelper.executeAsyncLater(() -> {
                             // Prevent refresh spam.
                             if (this.loginTimestamp == expectedLoginTimestamp) {
                                 this.login(this.refreshToken);
                             }
-                        });
+                        }, REFRESH_TIME);
 
                         this.authResponse = CaffeineAuthResponse.SUCCESS;
                     } else {
@@ -123,6 +125,17 @@ public class CaffeineAuth {
         SUCCESS,
         AWAIT2FA,
         INVALID;
+    }
+
+    @Override
+    public void authenticateRequest(@NonNull Builder request) {
+        request.addHeader("Authorization", "Bearer " + this.accessToken);
+        request.addHeader("x-credential", this.credential);
+    }
+
+    @Override
+    public void refresh() throws ApiAuthException {
+        this.login(this.refreshToken);
     }
 
 }

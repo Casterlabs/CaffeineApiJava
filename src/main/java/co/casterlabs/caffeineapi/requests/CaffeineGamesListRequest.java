@@ -1,18 +1,20 @@
-package com.github.caffeineapi.requests;
+package co.casterlabs.caffeineapi.requests;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.github.caffeineapi.CaffeineApi;
-import com.github.caffeineapi.CaffeineEndpoints;
-import com.github.caffeineapi.HttpUtil;
-import com.github.caffeineapi.exception.CaffeineApiException;
-import com.github.caffeineapi.requests.CaffeineGamesListRequest.CaffeineGame;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
 
+import co.casterlabs.apiutil.web.ApiException;
+import co.casterlabs.apiutil.web.WebRequest;
+import co.casterlabs.caffeineapi.CaffeineApi;
+import co.casterlabs.caffeineapi.CaffeineEndpoints;
+import co.casterlabs.caffeineapi.HttpUtil;
+import co.casterlabs.caffeineapi.requests.CaffeineGamesListRequest.CaffeineGame;
 import lombok.Getter;
 import lombok.ToString;
 import okhttp3.Response;
@@ -20,11 +22,13 @@ import okhttp3.Response;
 public class CaffeineGamesListRequest extends WebRequest<List<CaffeineGame>> {
 
     @Override
-    public List<CaffeineGame> send() throws Exception {
+    protected List<CaffeineGame> execute() throws ApiException, IOException {
         Response response = HttpUtil.sendHttpGet(CaffeineEndpoints.GAMES_LIST, null);
         String body = response.body().string();
-        JsonArray array = CaffeineApi.GSON.fromJson(body, JsonArray.class);
 
+        response.close();
+
+        JsonArray array = CaffeineApi.GSON.fromJson(body, JsonArray.class);
         List<CaffeineGame> list = new ArrayList<>();
 
         for (JsonElement element : array) {
@@ -36,7 +40,7 @@ public class CaffeineGamesListRequest extends WebRequest<List<CaffeineGame>> {
 
                 list.add(game);
             } catch (JsonSyntaxException e) {
-                throw new CaffeineApiException(e, "Could not parse CaffeineGame", element.toString());
+                throw new ApiException("Could not parse CaffeineGame: " + element.toString(), e);
             }
         }
 

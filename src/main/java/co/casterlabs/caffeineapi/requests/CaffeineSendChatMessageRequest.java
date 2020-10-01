@@ -1,15 +1,16 @@
-package com.github.caffeineapi.requests;
+package co.casterlabs.caffeineapi.requests;
 
-import java.util.Collections;
-import java.util.Map;
+import java.io.IOException;
 
-import com.github.caffeineapi.CaffeineAuth;
-import com.github.caffeineapi.CaffeineEndpoints;
-import com.github.caffeineapi.HttpUtil;
-import com.github.caffeineapi.exception.CaffeineAuthenticationException;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 
+import co.casterlabs.apiutil.auth.ApiAuthException;
+import co.casterlabs.apiutil.web.ApiException;
+import co.casterlabs.apiutil.web.AuthenticatedWebRequest;
+import co.casterlabs.caffeineapi.CaffeineAuth;
+import co.casterlabs.caffeineapi.CaffeineEndpoints;
+import co.casterlabs.caffeineapi.HttpUtil;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -19,7 +20,7 @@ import okhttp3.Response;
 
 @Setter
 @Accessors(chain = true)
-public class CaffeineSendChatMessageRequest extends AuthenticatedWebRequest<Void> {
+public class CaffeineSendChatMessageRequest extends AuthenticatedWebRequest<Void, CaffeineAuth> {
     private @NonNull String stageId;
     private @NonNull String message;
 
@@ -37,31 +38,42 @@ public class CaffeineSendChatMessageRequest extends AuthenticatedWebRequest<Void
         return this;
     }
 
+    public CaffeineSendChatMessageRequest setUser(String username) throws ApiAuthException, ApiException {
+        CaffeineUserInfoRequest request = new CaffeineUserInfoRequest();
+
+        request.setQuery(username);
+
+        this.stageId = request.send().getStageID();
+
+        return this;
+    }
+
     public CaffeineSendChatMessageRequest setCAID(@NonNull String caid) {
         this.stageId = caid.substring(4);
         return this;
     }
 
     @Override
-    public Void send() throws Exception {
+    protected Void execute() throws ApiException, ApiAuthException, IOException {
         if ((this.message == null) || (this.stageId == null)) {
             throw new NullPointerException("CAID or message is null.");
         }
 
-        Map<String, String> headers = Collections.singletonMap("Authorization", "Bearer " + this.getAuth().getAccessToken());
         JsonObject post = new JsonObject();
         JsonObject body = new JsonObject();
 
         body.addProperty("text", this.message);
 
         post.addProperty("type", "reaction");
-        post.addProperty("publisher", this.getAuth().getSignedToken());
+        post.addProperty("publisher", this.auth.getSignedToken());
         post.add("body", body);
 
-        Response response = HttpUtil.sendHttp(post.toString(), String.format(CaffeineEndpoints.CHAT_MESSAGE, this.stageId), headers, "application/json");
+        Response response = HttpUtil.sendHttp(post.toString(), String.format(CaffeineEndpoints.CHAT_MESSAGE, this.stageId), this.auth, "application/json");
+
+        response.close();
 
         if (response.code() == 401) {
-            throw new CaffeineAuthenticationException("Unable to send a chat message due to an authentication error");
+            throw new ApiAuthException("Auth is invalid");
         }
 
         return null;
