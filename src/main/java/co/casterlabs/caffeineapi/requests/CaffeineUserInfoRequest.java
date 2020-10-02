@@ -76,7 +76,7 @@ public class CaffeineUserInfoRequest extends WebRequest<CaffeineUser> {
         @SerializedName("following_count")
         private long followingCount;
         @SerializedName("avatar_image_path")
-        private long imageLink;
+        private String imageLink;
 
     }
 
