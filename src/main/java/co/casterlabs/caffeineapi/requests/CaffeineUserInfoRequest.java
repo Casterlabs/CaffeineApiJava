@@ -75,27 +75,9 @@ public class CaffeineUserInfoRequest extends WebRequest<CaffeineUser> {
         private long followersCount;
         @SerializedName("following_count")
         private long followingCount;
+        @SerializedName("avatar_image_path")
+        private long imageLink;
 
-    }
-
-    @Getter
-    @ToString
-    public static class CaffeineProp {
-        private String id;
-        private String name;
-        @SerializedName("gold_cost")
-        private int goldCost;
-        private int credits;
-        @SerializedName("plural_name")
-        private String pluralName;
-        @SerializedName("preview_image_path")
-        private String previewImagePath;
-        @SerializedName("static_image_path")
-        private String staticImagePath;
-        @SerializedName("web_asset_path")
-        private String webAssetPath;
-        @SerializedName("scene_kit_path")
-        private String sceneKitPath;
     }
 
 }
