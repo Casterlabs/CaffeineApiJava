@@ -3,3 +3,4 @@
 *target
 .project
 .classpath
+src/main/java/co/casterlabs/caffeineapi/Test.java

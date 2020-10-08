@@ -2,6 +2,7 @@ package co.casterlabs.caffeineapi.requests;
 
 import java.io.IOException;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 
@@ -11,6 +12,7 @@ import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.HttpUtil;
 import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest.CaffeineUser;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -51,12 +53,20 @@ public class CaffeineUserInfoRequest extends WebRequest<CaffeineUser> {
             JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
             JsonObject user = json.getAsJsonObject("user");
 
-            user.addProperty("avatar_image_path", CaffeineEndpoints.IMAGES + user.get("avatar_image_path").getAsString()); // Prepend the images endpoint to the link.
-
-            CaffeineUser result = CaffeineApi.GSON.fromJson(user, CaffeineUser.class);
-
-            return result;
+            return fromJson(user);
         }
+    }
+
+    public static CaffeineUser fromJson(JsonObject user) {
+        CaffeineUser result = CaffeineApi.GSON.fromJson(user, CaffeineUser.class);
+
+        if (result.badge == null) {
+            result.badge = UserBadge.NONE;
+        }
+
+        result.imageLink = CaffeineEndpoints.IMAGES + result.imageLink;  // Prepend the images endpoint to the link.
+
+        return result;
     }
 
     @Getter
@@ -77,6 +87,39 @@ public class CaffeineUserInfoRequest extends WebRequest<CaffeineUser> {
         private long followingCount;
         @SerializedName("avatar_image_path")
         private String imageLink;
+        private UserBadge badge;
+
+    }
+
+    @AllArgsConstructor
+    public static enum UserBadge {
+        NONE("https://raw.githubusercontent.com/Casterlabs/CaffeineApiJava/master/badges/none.png"),
+        CASTER("https://raw.githubusercontent.com/Casterlabs/CaffeineApiJava/master/badges/caster.png"),
+        CYAN("https://raw.githubusercontent.com/Casterlabs/CaffeineApiJava/master/badges/cyan.png"),
+        VERIFIED("https://raw.githubusercontent.com/Casterlabs/CaffeineApiJava/master/badges/verified.png"),
+        UNKNOWN("https://raw.githubusercontent.com/Casterlabs/CaffeineApiJava/master/badges/none.png");
+
+        private @Getter String imageLink;
+
+        public static UserBadge from(JsonElement element) {
+            if ((element == null) || element.isJsonNull()) {
+                return NONE;
+            } else {
+                switch (element.getAsString()) {
+                    case "CASTER":
+                        return CASTER;
+
+                    case "PARTNER1":
+                        return CYAN;
+
+                    case "VERIFIED":
+                        return VERIFIED;
+
+                    default:
+                        return UNKNOWN;
+                }
+            }
+        }
 
     }
 
