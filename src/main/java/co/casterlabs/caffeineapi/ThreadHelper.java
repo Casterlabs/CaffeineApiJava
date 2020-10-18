@@ -1,37 +1,27 @@
 package co.casterlabs.caffeineapi;
 
-import lombok.SneakyThrows;
-
 public class ThreadHelper {
+    private static int threadCount = 0;
 
-    public static Thread executeAsync(Runnable run) {
+    public static void executeAsync(String name, Runnable run) {
         Thread t = new Thread(run);
 
+        t.setName(name + " - CaffeineApi Async Thread #" + threadCount++);
         t.start();
-
-        return t;
     }
 
-    public static Thread executeAsyncDaemon(Runnable run) {
-        Thread t = new Thread(run);
-
-        t.setDaemon(true);
-        t.start();
-
-        return t;
-    }
-
-    public static Thread executeAsyncLater(Runnable run, long millis) {
+    public static Thread executeAsyncLater(String name, Runnable run, long millis) {
         Thread t = (new Thread() {
-            @SneakyThrows
             @Override
             public void run() {
-                Thread.sleep(millis);
-                run.run();
+                try {
+                    Thread.sleep(millis);
+                    run.run();
+                } catch (InterruptedException ignored) {} // We ignore this so we can cancel waits.
             }
         });
 
-        t.setDaemon(true);
+        t.setName(name + " - CaffeineApi Waiting Thread #" + threadCount++);
         t.start();
 
         return t;

@@ -112,6 +112,12 @@ public class CaffeineUserInfoRequest extends WebRequest<CaffeineUser> {
                     case "PARTNER1":
                         return CYAN;
 
+                    // Nobody is of this partner level yet.
+
+                    // case "PARTNER2":
+
+                    // case "PARTNER3":
+
                     case "VERIFIED":
                         return VERIFIED;
 
