@@ -10,6 +10,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 
+import co.casterlabs.apiutil.ApiUtil;
 import co.casterlabs.apiutil.auth.ApiAuthException;
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.apiutil.web.AuthenticatedWebRequest;
@@ -57,7 +58,8 @@ public class CaffeineFollowersListRequest extends AuthenticatedWebRequest<List<C
         List<CaffeineFollower> followers = new ArrayList<>();
 
         do {
-            Response response = HttpUtil.sendHttpGet(String.format(CaffeineEndpoints.FOLLOWERS, this.caid, this.offset), this.auth);
+            String url = String.format(CaffeineEndpoints.FOLLOWERS, this.caid, this.offset);
+            Response response = HttpUtil.sendHttpGet(url, this.auth);
             String body = response.body().string();
 
             response.close();
@@ -67,15 +69,20 @@ public class CaffeineFollowersListRequest extends AuthenticatedWebRequest<List<C
             } else if (response.code() == 404) {
                 throw new ApiException("User does not exist: " + body);
             } else {
-                JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
-                JsonArray array = json.getAsJsonArray("followers");
+                try {
+                    JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
+                    JsonArray array = json.getAsJsonArray("followers");
 
-                if (array.size() == 0) {
-                    break;
-                }
+                    if (array.size() == 0) {
+                        break;
+                    }
 
-                for (JsonElement e : array) {
-                    followers.add(CaffeineApi.GSON.fromJson(e, CaffeineFollower.class));
+                    for (JsonElement e : array) {
+                        followers.add(CaffeineApi.GSON.fromJson(e, CaffeineFollower.class));
+                    }
+                } catch (Exception e) {
+                    ApiUtil.getErrorReporter().apiError(url, null, this.auth.getAuthHeaders(), body, response.headers().toMultimap(), e);
+                    throw e;
                 }
             }
 

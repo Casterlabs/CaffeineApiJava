@@ -6,6 +6,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 
+import co.casterlabs.apiutil.ApiUtil;
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.apiutil.web.WebRequest;
 import co.casterlabs.caffeineapi.CaffeineApi;
@@ -42,7 +43,8 @@ public class CaffeineUserInfoRequest extends WebRequest<CaffeineUser> {
 
     @Override
     protected CaffeineUser execute() throws ApiException, IOException {
-        Response response = HttpUtil.sendHttpGet(String.format(CaffeineEndpoints.USERS, this.query), null);
+        String url = String.format(CaffeineEndpoints.USERS, this.query);
+        Response response = HttpUtil.sendHttpGet(url, null);
         String body = response.body().string();
 
         response.close();
@@ -50,10 +52,15 @@ public class CaffeineUserInfoRequest extends WebRequest<CaffeineUser> {
         if (response.code() == 404) {
             throw new ApiException("User does not exist: " + body);
         } else {
-            JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
-            JsonObject user = json.getAsJsonObject("user");
+            try {
+                JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
+                JsonObject user = json.getAsJsonObject("user");
 
-            return fromJson(user);
+                return fromJson(user);
+            } catch (Exception e) {
+                ApiUtil.getErrorReporter().apiError(url, null, null, body, response.headers().toMultimap(), e);
+                throw e;
+            }
         }
     }
 

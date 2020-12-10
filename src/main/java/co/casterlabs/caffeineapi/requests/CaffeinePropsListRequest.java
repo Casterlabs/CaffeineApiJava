@@ -10,6 +10,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
 
+import co.casterlabs.apiutil.ApiUtil;
 import co.casterlabs.apiutil.auth.ApiAuthException;
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.apiutil.web.AuthenticatedWebRequest;
@@ -35,34 +36,39 @@ public class CaffeinePropsListRequest extends AuthenticatedWebRequest<List<Caffe
 
         response.close();
 
-        if (response.code() == 401) {
-            throw new ApiAuthException("Auth is invalid: " + body);
-        } else {
-            JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
-            JsonObject payload = json.getAsJsonObject("payload");
-            JsonObject digitalItems = payload.getAsJsonObject("digital_items");
-            JsonArray state = digitalItems.getAsJsonArray("state");
+        try {
+            if (response.code() == 401) {
+                throw new ApiAuthException("Auth is invalid: " + body);
+            } else {
+                JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
+                JsonObject payload = json.getAsJsonObject("payload");
+                JsonObject digitalItems = payload.getAsJsonObject("digital_items");
+                JsonArray state = digitalItems.getAsJsonArray("state");
 
-            List<CaffeineProp> list = new ArrayList<>();
+                List<CaffeineProp> list = new ArrayList<>();
 
-            for (JsonElement element : state) {
-                try {
-                    CaffeineProp prop = CaffeineApi.GSON.fromJson(element, CaffeineProp.class);
+                for (JsonElement element : state) {
+                    try {
+                        CaffeineProp prop = CaffeineApi.GSON.fromJson(element, CaffeineProp.class);
 
-                    prop.previewImagePath = CaffeineEndpoints.ASSETS + prop.previewImagePath;
-                    prop.staticImagePath = CaffeineEndpoints.ASSETS + prop.staticImagePath;
-                    prop.webAssetPath = CaffeineEndpoints.ASSETS + prop.webAssetPath;
-                    prop.sceneKitPath = CaffeineEndpoints.ASSETS + prop.sceneKitPath;
+                        prop.previewImagePath = CaffeineEndpoints.ASSETS + prop.previewImagePath;
+                        prop.staticImagePath = CaffeineEndpoints.ASSETS + prop.staticImagePath;
+                        prop.webAssetPath = CaffeineEndpoints.ASSETS + prop.webAssetPath;
+                        prop.sceneKitPath = CaffeineEndpoints.ASSETS + prop.sceneKitPath;
 
-                    prop.credits = prop.goldCost * 3;
+                        prop.credits = prop.goldCost * 3;
 
-                    list.add(prop);
-                } catch (JsonSyntaxException e) {
-                    throw new ApiException("Could not parse CaffeineProp: " + element.toString(), e);
+                        list.add(prop);
+                    } catch (JsonSyntaxException e) {
+                        throw new ApiException("Could not parse CaffeineProp: " + element.toString(), e);
+                    }
                 }
-            }
 
-            return list;
+                return list;
+            }
+        } catch (Exception e) {
+            ApiUtil.getErrorReporter().apiError(CaffeineEndpoints.PROPS_LIST, null, this.auth.getAuthHeaders(), body, response.headers().toMultimap(), e);
+            throw e;
         }
     }
 

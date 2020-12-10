@@ -9,6 +9,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.annotations.SerializedName;
 
+import co.casterlabs.apiutil.ApiUtil;
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.apiutil.web.WebRequest;
 import co.casterlabs.caffeineapi.CaffeineApi;
@@ -28,23 +29,28 @@ public class CaffeineGamesListRequest extends WebRequest<List<CaffeineGame>> {
 
         response.close();
 
-        JsonArray array = CaffeineApi.GSON.fromJson(body, JsonArray.class);
-        List<CaffeineGame> list = new ArrayList<>();
+        try {
+            JsonArray array = CaffeineApi.GSON.fromJson(body, JsonArray.class);
+            List<CaffeineGame> list = new ArrayList<>();
 
-        for (JsonElement element : array) {
-            try {
-                CaffeineGame game = CaffeineApi.GSON.fromJson(element, CaffeineGame.class);
+            for (JsonElement element : array) {
+                try {
+                    CaffeineGame game = CaffeineApi.GSON.fromJson(element, CaffeineGame.class);
 
-                game.iconImagePath = CaffeineEndpoints.IMAGES + game.iconImagePath;
-                game.bannerImagePath = CaffeineEndpoints.IMAGES + game.bannerImagePath;
+                    game.iconImagePath = CaffeineEndpoints.IMAGES + game.iconImagePath;
+                    game.bannerImagePath = CaffeineEndpoints.IMAGES + game.bannerImagePath;
 
-                list.add(game);
-            } catch (JsonSyntaxException e) {
-                throw new ApiException("Could not parse CaffeineGame: " + element.toString(), e);
+                    list.add(game);
+                } catch (JsonSyntaxException e) {
+                    throw new ApiException("Could not parse CaffeineGame: " + element.toString(), e);
+                }
             }
-        }
 
-        return list;
+            return list;
+        } catch (Exception e) {
+            ApiUtil.getErrorReporter().apiError(CaffeineEndpoints.GAMES_LIST, null, null, body, response.headers().toMultimap(), e);
+            throw e;
+        }
     }
 
     @Getter

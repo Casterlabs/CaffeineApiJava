@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.google.gson.annotations.SerializedName;
 
+import co.casterlabs.apiutil.ApiUtil;
 import co.casterlabs.apiutil.auth.ApiAuthException;
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.apiutil.web.AuthenticatedWebRequest;
@@ -50,7 +51,8 @@ public class CaffeineFollowingListRequest extends AuthenticatedWebRequest<Caffei
 
     @Override
     protected CaffeineFollowingResponse execute() throws ApiException, ApiAuthException, IOException {
-        Response response = HttpUtil.sendHttpGet(String.format(CaffeineEndpoints.FOLLOWING, this.caid, this.offset), this.auth);
+        String url = String.format(CaffeineEndpoints.FOLLOWING, this.caid, this.offset);
+        Response response = HttpUtil.sendHttpGet(url, this.auth);
         String body = response.body().string();
 
         response.close();
@@ -60,7 +62,12 @@ public class CaffeineFollowingListRequest extends AuthenticatedWebRequest<Caffei
         } else if (response.code() == 404) {
             throw new ApiException("User does not exist: " + body);
         } else {
-            return CaffeineApi.GSON.fromJson(body, CaffeineFollowingResponse.class);
+            try {
+                return CaffeineApi.GSON.fromJson(body, CaffeineFollowingResponse.class);
+            } catch (Exception e) {
+                ApiUtil.getErrorReporter().apiError(url, null, this.auth.getAuthHeaders(), body, response.headers().toMultimap(), e);
+                throw e;
+            }
         }
     }
 

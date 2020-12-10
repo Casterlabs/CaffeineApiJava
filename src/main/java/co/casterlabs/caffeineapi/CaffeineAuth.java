@@ -1,6 +1,8 @@
 package co.casterlabs.caffeineapi;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.jetbrains.annotations.Nullable;
@@ -120,6 +122,15 @@ public class CaffeineAuth implements AuthProvider {
     @Override
     public void refresh() throws ApiAuthException {
         this.login(this.refreshToken);
+    }
+
+    public @NonNull Object getAuthHeaders() {
+        Map<String, String> headers = new HashMap<>();
+
+        headers.put("Authorization", "Bearer " + this.accessToken);
+        headers.put("x-credential", this.credential);
+
+        return headers;
     }
 
 }
