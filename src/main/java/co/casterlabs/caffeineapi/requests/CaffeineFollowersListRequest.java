@@ -101,6 +101,7 @@ public class CaffeineFollowersListRequest extends AuthenticatedWebRequest<List<C
     public static class CaffeineFollower {
         @SerializedName("caid")
         private String CAID;
+
         @SerializedName("followed_at")
         private Instant followedAt;
 

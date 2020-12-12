@@ -13,7 +13,11 @@ public class UserBadgeSerializer implements JsonDeserializer<UserBadge> {
 
     @Override
     public UserBadge deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-        return UserBadge.from(json);
+        try {
+            return UserBadge.from(json);
+        } catch (Exception e) {
+            throw new JsonParseException("Unable to parse badge", e);
+        }
     }
 
 }

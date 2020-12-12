@@ -12,9 +12,13 @@ public class InstantSerializer implements JsonDeserializer<Instant> {
 
     @Override
     public Instant deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-        String value = json.getAsString();
+        try {
+            String value = json.getAsString();
 
-        return Instant.parse(value);
+            return Instant.parse(value);
+        } catch (Exception e) {
+            throw new JsonParseException("Unable to parse instant", e);
+        }
     }
 
 }

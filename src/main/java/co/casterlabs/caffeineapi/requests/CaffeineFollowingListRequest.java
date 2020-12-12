@@ -76,6 +76,7 @@ public class CaffeineFollowingListRequest extends AuthenticatedWebRequest<Caffei
     public static class CaffeineFollow {
         @SerializedName("caid")
         private String CAID;
+
         @SerializedName("followed_at")
         private Instant followedAt;
 

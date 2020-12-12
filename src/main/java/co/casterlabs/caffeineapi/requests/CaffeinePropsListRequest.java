@@ -45,23 +45,12 @@ public class CaffeinePropsListRequest extends AuthenticatedWebRequest<List<Caffe
                 JsonObject digitalItems = payload.getAsJsonObject("digital_items");
                 JsonArray state = digitalItems.getAsJsonArray("state");
 
+                System.out.println(json);
+
                 List<CaffeineProp> list = new ArrayList<>();
 
                 for (JsonElement element : state) {
-                    try {
-                        CaffeineProp prop = CaffeineApi.GSON.fromJson(element, CaffeineProp.class);
-
-                        prop.previewImagePath = CaffeineEndpoints.ASSETS + prop.previewImagePath;
-                        prop.staticImagePath = CaffeineEndpoints.ASSETS + prop.staticImagePath;
-                        prop.webAssetPath = CaffeineEndpoints.ASSETS + prop.webAssetPath;
-                        prop.sceneKitPath = CaffeineEndpoints.ASSETS + prop.sceneKitPath;
-
-                        prop.credits = prop.goldCost * 3;
-
-                        list.add(prop);
-                    } catch (JsonSyntaxException e) {
-                        throw new ApiException("Could not parse CaffeineProp: " + element.toString(), e);
-                    }
+                    list.add(fromJson(element));
                 }
 
                 return list;
@@ -72,24 +61,52 @@ public class CaffeinePropsListRequest extends AuthenticatedWebRequest<List<Caffe
         }
     }
 
+    public static CaffeineProp fromJson(JsonElement element) throws ApiException {
+        try {
+            CaffeineProp prop = CaffeineApi.GSON.fromJson(element, CaffeineProp.class);
+
+            prop.universalVideoPropPath = CaffeineEndpoints.ASSETS + prop.universalVideoPropPath;
+            prop.previewImagePath = CaffeineEndpoints.ASSETS + prop.previewImagePath;
+            prop.staticImagePath = CaffeineEndpoints.ASSETS + prop.staticImagePath;
+            prop.webAssetPath = CaffeineEndpoints.ASSETS + prop.webAssetPath;
+            prop.sceneKitPath = CaffeineEndpoints.ASSETS + prop.sceneKitPath;
+
+            prop.credits = prop.goldCost * 3;
+
+            return prop;
+        } catch (JsonSyntaxException e) {
+            throw new ApiException("Could not parse CaffeineProp: " + element.toString(), e);
+        }
+    }
+
     @Getter
     @ToString
     public static class CaffeineProp {
         private String id;
         private String name;
+        private int credits;
+
         @SerializedName("gold_cost")
         private int goldCost;
-        private int credits;
+
         @SerializedName("plural_name")
         private String pluralName;
+
+        @SerializedName("universal_video_prop_path")
+        private String universalVideoPropPath;
+
         @SerializedName("preview_image_path")
         private String previewImagePath;
+
         @SerializedName("static_image_path")
         private String staticImagePath;
+
         @SerializedName("web_asset_path")
         private String webAssetPath;
+
         @SerializedName("scene_kit_path")
         private String sceneKitPath;
+
     }
 
 }

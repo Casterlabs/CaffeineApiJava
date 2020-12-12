@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 
 import co.casterlabs.apiutil.auth.ApiAuthException;
 import co.casterlabs.apiutil.auth.AuthProvider;
@@ -20,6 +21,8 @@ import okhttp3.Response;
 public class CaffeineAuth implements AuthProvider {
     private static final long REFRESH_TIME = TimeUnit.MINUTES.toMillis(10);
 
+    private static String anonymousCredential;
+
     private CaffeineAuthResponse authResponse;
     private String refreshToken;
     private long loginTimestamp;
@@ -27,6 +30,27 @@ public class CaffeineAuth implements AuthProvider {
     private String signedToken;
     private String credential;
     private String caid;
+
+    static {
+        Thread t = new Thread(() -> {
+            try {
+                while (true) {
+                    Response response = HttpUtil.sendHttpGet("https://api.caffeine.tv/v1/credentials/anonymous", null);
+                    JsonObject json = CaffeineApi.GSON.fromJson(response.body().string(), JsonObject.class);
+
+                    anonymousCredential = json.get("credential").getAsString();
+
+                    Thread.sleep(REFRESH_TIME);
+                }
+            } catch (JsonSyntaxException | IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
+        t.setName("Caffeine Anonymous Credential Refresh");
+        t.setDaemon(true);
+        t.start();
+    }
 
     public CaffeineAuthResponse login(@NonNull String username, @NonNull String password, @Nullable String twoFactor) throws ApiAuthException {
         JsonObject request = new JsonObject();
@@ -131,6 +155,16 @@ public class CaffeineAuth implements AuthProvider {
         headers.put("x-credential", this.credential);
 
         return headers;
+    }
+
+    public static String getAnonymousCredential() {
+        while (anonymousCredential == null) { // A (bad) way to wait for the internal thread to init
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {}
+        }
+
+        return anonymousCredential;
     }
 
 }

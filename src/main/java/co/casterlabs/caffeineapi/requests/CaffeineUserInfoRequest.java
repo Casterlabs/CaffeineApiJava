@@ -67,6 +67,7 @@ public class CaffeineUserInfoRequest extends WebRequest<CaffeineUser> {
     public static CaffeineUser fromJson(JsonObject user) {
         CaffeineUser result = CaffeineApi.GSON.fromJson(user, CaffeineUser.class);
 
+        // Caffeine's "no badge" is always null
         if (result.badge == null) {
             result.badge = UserBadge.NONE;
         }
@@ -119,7 +120,7 @@ public class CaffeineUserInfoRequest extends WebRequest<CaffeineUser> {
                     case "PARTNER1":
                         return CYAN;
 
-                    // Nobody is of this partner level yet.
+                    // Nobody is of these partner levels yet.
 
                     // case "PARTNER2":
 
