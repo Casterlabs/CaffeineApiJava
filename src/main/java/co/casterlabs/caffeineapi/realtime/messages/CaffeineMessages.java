@@ -110,7 +110,7 @@ public class CaffeineMessages {
                 if (!raw.equals("\"THANKS\"") && (listener != null)) {
                     JsonObject json = CaffeineApi.GSON.fromJson(raw, JsonObject.class);
 
-                    if (!json.has("Compatibility-Mode")) {
+                    if (!json.has("Compatibility-Mode") && json.has("type")) {
                         CaffeineAlertType type = CaffeineAlertType.fromJson(json.get("type"));
 
                         if (type != CaffeineAlertType.UNKNOWN) {
