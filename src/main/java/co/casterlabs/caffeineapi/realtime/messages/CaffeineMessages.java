@@ -29,6 +29,7 @@ public class CaffeineMessages {
     private Connection conn;
 
     private @Setter @Nullable CaffeineMessagesListener listener;
+    private @Getter boolean connecting = false;
     private @Getter boolean connected = false;
 
     public CaffeineMessages(String caidOrStage) {
@@ -39,21 +40,23 @@ public class CaffeineMessages {
         this.stageId = user.getStageID();
     }
 
-    public void connect() {
-        if (!this.connected) {
+    public synchronized void connect() {
+        if (!this.connected && !this.connecting) {
             try {
                 this.conn = new Connection();
 
+                this.connecting = true;
                 this.conn.connect();
             } catch (URISyntaxException ignored) {}
         }
     }
 
-    public void connectBlocking() throws InterruptedException {
-        if (!this.connected) {
+    public synchronized void connectBlocking() throws InterruptedException {
+        if (!this.connected && !this.connecting) {
             try {
                 this.conn = new Connection();
 
+                this.connecting = true;
                 this.conn.connectBlocking();
             } catch (URISyntaxException ignored) {}
         }
@@ -96,6 +99,7 @@ public class CaffeineMessages {
             this.send(LOGIN_HEADER);
 
             connected = true;
+            connecting = false;
 
             keepAlive();
 
