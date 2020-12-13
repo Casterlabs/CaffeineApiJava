@@ -9,7 +9,7 @@ import lombok.ToString;
 @ToString
 public class ShareEvent extends ChatEvent {
 
-    public ShareEvent(@NonNull CaffeineUser sender, @NonNull String id, @NonNull String message) {
+    public ShareEvent(@NonNull CaffeineUser sender, @NonNull String message, @NonNull String id) {
         super(sender, message, id);
     }
 
