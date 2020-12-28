@@ -6,6 +6,6 @@ public interface CaffeineQueryListener {
 
     public void onStreamStateChanged(boolean isLive, String title);
 
-    default void onClose() {}
+    default void onClose(boolean remote) {}
 
 }

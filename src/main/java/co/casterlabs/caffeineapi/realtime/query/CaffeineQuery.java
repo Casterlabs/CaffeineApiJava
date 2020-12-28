@@ -108,7 +108,7 @@ public class CaffeineQuery implements Closeable {
         @Override
         public void onClose(int code, String reason, boolean remote) {
             if (listener != null) {
-                listener.onClose();
+                listener.onClose(remote);
             }
         }
 

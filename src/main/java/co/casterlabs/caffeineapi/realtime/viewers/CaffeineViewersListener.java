@@ -16,6 +16,6 @@ public interface CaffeineViewersListener {
 
     public void onTotalCount(int count);
 
-    default void onClose() {}
+    default void onClose(boolean remote) {}
 
 }

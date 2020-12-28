@@ -12,6 +12,6 @@ public interface CaffeineMessagesListener {
 
     public void onUpvote(UpvoteEvent event);
 
-    default void onClose() {}
+    default void onClose(boolean remote) {}
 
 }
