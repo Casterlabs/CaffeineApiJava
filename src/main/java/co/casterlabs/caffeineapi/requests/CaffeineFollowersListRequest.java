@@ -19,9 +19,9 @@ import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.HttpUtil;
 import co.casterlabs.caffeineapi.requests.CaffeineFollowersListRequest.CaffeineFollower;
-import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest.CaffeineUser;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import okhttp3.Response;
@@ -30,6 +30,7 @@ public class CaffeineFollowersListRequest extends AuthenticatedWebRequest<List<C
     private boolean retrieveAll = false;
     private long offset = 0;
     private String caid;
+    private @Setter long limit = 0;
 
     public CaffeineFollowersListRequest(CaffeineAuth auth) {
         super(auth);
@@ -58,7 +59,7 @@ public class CaffeineFollowersListRequest extends AuthenticatedWebRequest<List<C
         List<CaffeineFollower> followers = new ArrayList<>();
 
         do {
-            String url = String.format(CaffeineEndpoints.FOLLOWERS, this.caid, this.offset);
+            String url = String.format(CaffeineEndpoints.FOLLOWERS, this.caid, this.limit, this.offset);
             Response response = HttpUtil.sendHttpGet(url, this.auth);
             String body = response.body().string();
 

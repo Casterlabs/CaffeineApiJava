@@ -7,7 +7,7 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 
-import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest.UserBadge;
+import co.casterlabs.caffeineapi.requests.CaffeineUser.UserBadge;
 
 public class UserBadgeSerializer implements JsonDeserializer<UserBadge> {
 

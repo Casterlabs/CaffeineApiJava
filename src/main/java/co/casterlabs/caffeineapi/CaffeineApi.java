@@ -5,7 +5,7 @@ import java.time.Instant;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest.UserBadge;
+import co.casterlabs.caffeineapi.requests.CaffeineUser.UserBadge;
 import co.casterlabs.caffeineapi.serializers.InstantSerializer;
 import co.casterlabs.caffeineapi.serializers.UserBadgeSerializer;
 

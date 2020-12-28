@@ -26,9 +26,9 @@ public class CaffeineAuth implements AuthProvider {
     private CaffeineAuthResponse authResponse;
     private String refreshToken;
     private long loginTimestamp;
-    private String accessToken;
-    private String signedToken;
-    private String credential;
+    private @Getter String accessToken;
+    private @Getter String signedToken;
+    private @Getter String credential;
     private String caid;
 
     static {
@@ -148,7 +148,7 @@ public class CaffeineAuth implements AuthProvider {
         this.login(this.refreshToken);
     }
 
-    public @NonNull Object getAuthHeaders() {
+    public @NonNull Map<String, String> getAuthHeaders() {
         Map<String, String> headers = new HashMap<>();
 
         headers.put("Authorization", "Bearer " + this.accessToken);

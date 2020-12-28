@@ -15,9 +15,9 @@ import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.HttpUtil;
 import co.casterlabs.caffeineapi.requests.CaffeineFollowingListRequest.CaffeineFollowingResponse;
-import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest.CaffeineUser;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import okhttp3.Response;
@@ -25,6 +25,7 @@ import okhttp3.Response;
 public class CaffeineFollowingListRequest extends AuthenticatedWebRequest<CaffeineFollowingResponse, CaffeineAuth> {
     private String caid;
     private long offset = 0;
+    private @Setter long limit = 0;
 
     public CaffeineFollowingListRequest(CaffeineAuth auth) {
         super(auth);
@@ -51,7 +52,7 @@ public class CaffeineFollowingListRequest extends AuthenticatedWebRequest<Caffei
 
     @Override
     protected CaffeineFollowingResponse execute() throws ApiException, ApiAuthException, IOException {
-        String url = String.format(CaffeineEndpoints.FOLLOWING, this.caid, this.offset);
+        String url = String.format(CaffeineEndpoints.FOLLOWING, this.caid, this.limit, this.offset);
         Response response = HttpUtil.sendHttpGet(url, this.auth);
         String body = response.body().string();
 

@@ -1,7 +1,7 @@
 package co.casterlabs.caffeineapi.realtime.messages;
 
-import co.casterlabs.caffeineapi.requests.CaffeinePropsListRequest.CaffeineProp;
-import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest.CaffeineUser;
+import co.casterlabs.caffeineapi.requests.CaffeineProp;
+import co.casterlabs.caffeineapi.requests.CaffeineUser;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -10,11 +10,13 @@ import lombok.ToString;
 @ToString
 public class PropEvent extends ChatEvent {
     private CaffeineProp prop;
+    private int amount;
 
-    public PropEvent(@NonNull CaffeineUser sender, @NonNull String message, @NonNull String id, @NonNull CaffeineProp prop) {
+    public PropEvent(@NonNull CaffeineUser sender, @NonNull String message, @NonNull String id, int amount, @NonNull CaffeineProp prop) {
         super(sender, message, id);
 
         this.prop = prop;
+        this.amount = amount;
     }
 
 }

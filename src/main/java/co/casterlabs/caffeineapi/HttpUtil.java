@@ -52,6 +52,8 @@ public class HttpUtil {
             builder.addHeader("Content-Type", mime);
         }
 
+        builder.addHeader("x-client-type", "api");
+
         Request request = builder.build();
         Response response = client.newCall(request).execute();
 
