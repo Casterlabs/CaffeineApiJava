@@ -1,5 +1,7 @@
 package co.casterlabs.caffeineapi.realtime.messages;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Base64;
@@ -19,7 +21,7 @@ import co.casterlabs.caffeineapi.requests.CaffeineProp;
 import co.casterlabs.caffeineapi.requests.CaffeineUser;
 import lombok.Setter;
 
-public class CaffeineMessages {
+public class CaffeineMessages implements Closeable {
     private static final String ANONYMOUS_LOGIN_HEADER = "{\"Headers\":{\"Authorization\":\"Anonymous Fish\",\"X-Client-Type\":\"api\"}}";
     private static final String AUTH_LOGIN_HEADER = "{\"Headers\":{\"Authorization\":\"Bearer %s\",\"X-Client-Type\":\"api\"},\"Body\":\"{\\\"user\\\":\\\"%s\\\"}\"}";
     private static final long CAFFEINE_KEEPALIVE = TimeUnit.SECONDS.toMillis(15);
@@ -168,6 +170,15 @@ public class CaffeineMessages {
         JsonObject json = CaffeineApi.GSON.fromJson(new String(bytes), JsonObject.class);
 
         return json.get("u").getAsString();
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            this.disconnectBlocking();
+        } catch (InterruptedException e) {
+            throw new IOException(e);
+        }
     }
 
 }

@@ -1,5 +1,7 @@
 package co.casterlabs.caffeineapi.realtime.viewers;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -22,7 +24,7 @@ import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.requests.CaffeineUser.UserBadge;
 import lombok.Setter;
 
-public class CaffeineViewers {
+public class CaffeineViewers implements Closeable {
     // Client type web, as for some reason this is the only way to bring in the newer viewers format
     private static final String AUTH_LOGIN_HEADER = "{\"Headers\":{\"Authorization\":\"Bearer %s\",\"X-Client-Type\":\"web\"},\"Body\":\"{\\\"user\\\":\\\"%s\\\"}\"}";
     private static final long CAFFEINE_KEEPALIVE = TimeUnit.SECONDS.toMillis(15);
@@ -199,6 +201,15 @@ public class CaffeineViewers {
             e.printStackTrace();
         }
 
+    }
+
+    @Override
+    public void close() throws IOException {
+        try {
+            this.disconnectBlocking();
+        } catch (InterruptedException e) {
+            throw new IOException(e);
+        }
     }
 
 }
