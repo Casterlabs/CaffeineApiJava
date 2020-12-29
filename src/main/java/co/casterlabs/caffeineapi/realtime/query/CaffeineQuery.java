@@ -8,6 +8,7 @@ import java.util.Collections;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft_6455;
+import org.java_websocket.enums.ReadyState;
 import org.java_websocket.handshake.ServerHandshake;
 import org.java_websocket.protocols.Protocol;
 import org.jetbrains.annotations.Nullable;
@@ -46,11 +47,19 @@ public class CaffeineQuery implements Closeable {
     }
 
     public void connect() {
-        this.conn.reconnect();
+        if (this.conn.getReadyState() == ReadyState.NOT_YET_CONNECTED) {
+            this.conn.connect();
+        } else {
+            this.conn.reconnect();
+        }
     }
 
     public void connectBlocking() throws InterruptedException {
-        this.conn.reconnectBlocking();
+        if (this.conn.getReadyState() == ReadyState.NOT_YET_CONNECTED) {
+            this.conn.connectBlocking();
+        } else {
+            this.conn.reconnectBlocking();
+        }
     }
 
     public void disconnect() {

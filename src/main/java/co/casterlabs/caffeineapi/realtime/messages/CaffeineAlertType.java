@@ -6,6 +6,7 @@ public enum CaffeineAlertType {
     REACTION,
     DIGITAL_ITEM,
     SHARE,
+    FOLLOW,
     UNKNOWN;
 
     public static CaffeineAlertType fromJson(JsonElement element) {
@@ -21,6 +22,9 @@ public enum CaffeineAlertType {
 
             case "SHARE":
                 return SHARE;
+
+            case "FOLLOW":
+                return FOLLOW;
 
             default:
                 return UNKNOWN;

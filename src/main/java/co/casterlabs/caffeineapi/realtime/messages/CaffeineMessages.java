@@ -8,6 +8,7 @@ import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
 import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.enums.ReadyState;
 import org.java_websocket.handshake.ServerHandshake;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,12 +44,20 @@ public class CaffeineMessages implements Closeable {
         }
     }
 
-    public synchronized void connect() {
-        this.conn.reconnect();
+    public void connect() {
+        if (this.conn.getReadyState() == ReadyState.NOT_YET_CONNECTED) {
+            this.conn.connect();
+        } else {
+            this.conn.reconnect();
+        }
     }
 
-    public synchronized void connectBlocking() throws InterruptedException {
-        this.conn.reconnectBlocking();
+    public void connectBlocking() throws InterruptedException {
+        if (this.conn.getReadyState() == ReadyState.NOT_YET_CONNECTED) {
+            this.conn.connectBlocking();
+        } else {
+            this.conn.reconnectBlocking();
+        }
     }
 
     public void disconnect() {
@@ -92,6 +101,8 @@ public class CaffeineMessages implements Closeable {
 
         @Override
         public void onMessage(String raw) {
+            System.out.println(raw);
+
             try {
                 if (!raw.equals("\"THANKS\"") && (listener != null)) {
                     JsonObject json = CaffeineApi.GSON.fromJson(raw, JsonObject.class);
@@ -137,6 +148,11 @@ public class CaffeineMessages implements Closeable {
                                     } else {
                                         listener.onProp(propEvent);
                                     }
+
+                                    return;
+
+                                case FOLLOW:
+                                    listener.onFollow(new FollowEvent(sender));
 
                                     return;
 

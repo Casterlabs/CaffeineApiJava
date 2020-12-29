@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.java_websocket.client.WebSocketClient;
+import org.java_websocket.enums.ReadyState;
 import org.java_websocket.handshake.ServerHandshake;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,12 +57,20 @@ public class CaffeineViewers implements Closeable {
         }
     }
 
-    public synchronized void connect() {
-        this.conn.reconnect();
+    public void connect() {
+        if (this.conn.getReadyState() == ReadyState.NOT_YET_CONNECTED) {
+            this.conn.connect();
+        } else {
+            this.conn.reconnect();
+        }
     }
 
-    public synchronized void connectBlocking() throws InterruptedException {
-        this.conn.reconnectBlocking();
+    public void connectBlocking() throws InterruptedException {
+        if (this.conn.getReadyState() == ReadyState.NOT_YET_CONNECTED) {
+            this.conn.connectBlocking();
+        } else {
+            this.conn.reconnectBlocking();
+        }
     }
 
     public void disconnect() {
