@@ -101,8 +101,6 @@ public class CaffeineMessages implements Closeable {
 
         @Override
         public void onMessage(String raw) {
-            System.out.println(raw);
-
             try {
                 if (!raw.equals("\"THANKS\"") && (listener != null)) {
                     JsonObject json = CaffeineApi.GSON.fromJson(raw, JsonObject.class);
