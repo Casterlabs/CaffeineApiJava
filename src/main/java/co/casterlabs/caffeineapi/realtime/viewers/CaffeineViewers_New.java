@@ -15,19 +15,20 @@ import org.java_websocket.enums.ReadyState;
 import org.java_websocket.handshake.ServerHandshake;
 import org.jetbrains.annotations.Nullable;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
-import co.casterlabs.caffeineapi.requests.CaffeineUser;
 import co.casterlabs.caffeineapi.requests.CaffeineUser.UserBadge;
-import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest;
 import lombok.Setter;
 
-public class CaffeineViewers implements Closeable {
-    private static final String AUTH_LOGIN_HEADER = "{\"Headers\":{\"Authorization\":\"Bearer %s\",\"X-Client-Type\":\"api\"},\"Body\":\"{\\\"user\\\":\\\"%s\\\"}\"}";
+public class CaffeineViewers_New implements Closeable {
+    // Client type web, as for some reason this is the only way to bring in the
+    // newer viewers format
+    private static final String AUTH_LOGIN_HEADER = "{\"Headers\":{\"Authorization\":\"Bearer %s\",\"X-Client-Type\":\"web\"},\"Body\":\"{\\\"user\\\":\\\"%s\\\"}\"}";
     private static final long CAFFEINE_KEEPALIVE = TimeUnit.SECONDS.toMillis(15);
 
     //@formatter:off
@@ -48,7 +49,7 @@ public class CaffeineViewers implements Closeable {
 
     private @Setter @Nullable CaffeineViewersListener listener;
 
-    public CaffeineViewers(CaffeineAuth auth) {
+    public CaffeineViewers_New(CaffeineAuth auth) {
         this.auth = auth;
 
         try {
@@ -117,8 +118,54 @@ public class CaffeineViewers implements Closeable {
                 JsonObject json = CaffeineApi.GSON.fromJson(raw, JsonObject.class);
 
                 if (!json.has("Compatibility-Mode")) {
-                    if (json.has("anonymous_user_count")) {
-                        int anonymousCount = json.get("anonymous_user_count").getAsInt();
+                    if (json.get("departed_viewer_caids").isJsonArray()) {
+                        JsonArray departed = json.getAsJsonArray("departed_viewer_caids");
+
+                        for (JsonElement e : departed) {
+                            Viewer viewer = this.viewers.remove(e.getAsString());
+
+                            if ((viewer != null) && (listener != null)) {
+                                listener.onLeave(viewer);
+                            }
+                        }
+                    }
+
+                    if (json.get("new_viewers").isJsonArray()) {
+                        JsonArray newViewers = json.getAsJsonArray("new_viewers");
+
+                        for (JsonElement e : newViewers) {
+                            JsonObject newViewer = e.getAsJsonObject();
+                            JsonObject userDetails = newViewer.getAsJsonObject("user_details");
+
+                            String imageLink = CaffeineEndpoints.IMAGES + userDetails.get("avatar_image_path").getAsString();
+                            String username = userDetails.get("username").getAsString();
+                            UserBadge badge = UserBadge.from(userDetails.get("badge"));
+                            String caid = userDetails.get("caid").getAsString();
+
+                            ViewerDetails details = new ViewerDetails(caid, imageLink, badge, username);
+                            Viewer viewer = new Viewer(details, null, newViewer.get("joined_at").getAsLong());
+
+                            this.viewers.put(caid, viewer);
+
+                            if (listener != null) {
+                                listener.onJoin(viewer);
+                            }
+                        }
+                    }
+
+                    if (!json.get("replacement_viewers").isJsonNull()) {
+                        // TODO ?
+                        System.out.printf("Replacement viewers: \n%s\n", json.get("replacement_viewers"));
+                    }
+
+                    if (listener != null) {
+                        JsonObject viewerCounts = json.getAsJsonObject("viewer_counts");
+                        int anonymousCount = viewerCounts.get("anonymous").getAsInt();
+
+                        listener.onAnonymousCount(anonymousCount);
+                        listener.onTotalCount(viewerCounts.get("total").getAsInt());
+
+                        List<Viewer> viewersList = new ArrayList<>();
 
                         // Oh yeah, pure jank.
                         if (this.lastAnonymousCount != anonymousCount) {
@@ -136,52 +183,8 @@ public class CaffeineViewers implements Closeable {
 
                             this.lastAnonymousCount = anonymousCount;
                         }
-                    } else if (json.has("user_event")) {
-                        JsonObject userEvent = json.getAsJsonObject("user_event");
-                        String caid = userEvent.get("caid").getAsString();
 
-                        if (userEvent.get("is_viewing").getAsBoolean()) {
-                            try {
-                                CaffeineUserInfoRequest request = new CaffeineUserInfoRequest().setCAID(caid);
-                                CaffeineUser user = request.send();
-
-                                //@formatter:off
-                                Viewer viewer = new Viewer(
-                                            new ViewerDetails(
-                                                caid, 
-                                                user.getImageLink(), 
-                                                user.getBadge(), 
-                                                user.getUsername()
-                                            ), 
-                                            user, 
-                                            System.currentTimeMillis() / 1000
-                                        );
-                                //@formatter:on
-
-                                this.viewers.put(caid, viewer);
-
-                                if (listener != null) {
-                                    listener.onJoin(viewer);
-                                }
-                            } catch (ApiException e) {
-                                e.printStackTrace();
-                            }
-                        } else {
-                            Viewer viewer = this.viewers.remove(caid);
-
-                            if (listener != null) {
-                                listener.onLeave(viewer);
-                            }
-                        }
-                    }
-
-                    if (listener != null) {
-                        listener.onAnonymousCount(this.lastAnonymousCount);
-                        listener.onTotalCount(this.viewers.size() + this.lastAnonymousCount);
-
-                        List<Viewer> viewersList = new ArrayList<>();
-
-                        for (int i = 0; i != lastAnonymousCount; i++) {
+                        for (int i = 0; i != anonymousCount; i++) {
                             viewersList.add(anonymousViewer);
                         }
 

@@ -13,6 +13,8 @@ import lombok.ToString;
 @Getter
 @ToString
 public class CaffeineUser {
+    private String bio;
+
     private String username;
 
     private UserBadge badge;

@@ -2,9 +2,7 @@ package co.casterlabs.caffeineapi.realtime.viewers;
 
 import org.jetbrains.annotations.Nullable;
 
-import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.caffeineapi.requests.CaffeineUser;
-import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
@@ -15,6 +13,7 @@ import lombok.ToString;
 @AllArgsConstructor
 public class Viewer {
     private @NonNull ViewerDetails userDetails;
+    private @Nullable CaffeineUser asUser;
     private long joinedAt;
 
     public @Nullable String getCAID() {
@@ -23,18 +22,6 @@ public class Viewer {
 
     public boolean isAnonymous() {
         return this.userDetails.getCAID().equals("Anonymous");
-    }
-
-    public CaffeineUser getAsUser() throws ApiException {
-        if (this.isAnonymous()) {
-            throw new ApiException("Cannot convert anonymous viewer to CaffeineUser.");
-        } else {
-            CaffeineUserInfoRequest request = new CaffeineUserInfoRequest();
-
-            request.setCAID(this.userDetails.getCAID());
-
-            return request.send();
-        }
     }
 
     @Override
