@@ -17,10 +17,11 @@ public class CaffeineProp {
 
     private String name;
 
-    private int credits;
+    @SerializedName("credits_per_item")
+    private int credits = -1;
 
     @SerializedName("gold_cost")
-    private int goldCost;
+    private int goldCost = -1;
 
     @SerializedName("plural_name")
     private String pluralName;
@@ -50,7 +51,12 @@ public class CaffeineProp {
             prop.webAssetPath = CaffeineEndpoints.ASSETS + prop.webAssetPath;
             prop.sceneKitPath = CaffeineEndpoints.ASSETS + prop.sceneKitPath;
 
-            prop.credits = prop.goldCost * 3;
+            // The format from messages is different from the proplist api, so we detect that and adjust to it.
+            if (prop.goldCost == -1) {
+                prop.goldCost = prop.credits / 3;
+            } else {
+                prop.credits = prop.goldCost * 3;
+            }
 
             return prop;
         } catch (JsonSyntaxException e) {

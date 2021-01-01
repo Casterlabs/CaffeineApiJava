@@ -111,7 +111,7 @@ public class CaffeineMessages implements Closeable {
                         if (type != CaffeineAlertType.UNKNOWN) {
                             CaffeineUser sender = CaffeineUser.fromJson(json.getAsJsonObject("publisher"));
                             JsonObject body = json.getAsJsonObject("body");
-                            String id = getId(json.get("id").getAsString());
+                            String id = getMessageId(json.get("id").getAsString());
 
                             switch (type) {
                                 case REACTION:
@@ -179,7 +179,7 @@ public class CaffeineMessages implements Closeable {
 
     }
 
-    private static String getId(String b64) {
+    private static String getMessageId(String b64) {
         byte[] bytes = Base64.getDecoder().decode(b64);
         JsonObject json = CaffeineApi.GSON.fromJson(new String(bytes), JsonObject.class);
 
