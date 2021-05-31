@@ -1,6 +1,6 @@
 package co.casterlabs.caffeineapi.realtime.viewers;
 
-import co.casterlabs.caffeineapi.types.CaffeineUser.UserBadge;
+import co.casterlabs.caffeineapi.types.UserBadge;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;

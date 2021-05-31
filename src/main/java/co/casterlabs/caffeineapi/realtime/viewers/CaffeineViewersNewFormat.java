@@ -22,7 +22,7 @@ import com.google.gson.JsonObject;
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
-import co.casterlabs.caffeineapi.types.CaffeineUser.UserBadge;
+import co.casterlabs.caffeineapi.types.UserBadge;
 import lombok.Setter;
 
 public class CaffeineViewersNewFormat implements Closeable {

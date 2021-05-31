@@ -7,7 +7,7 @@ import com.google.gson.GsonBuilder;
 
 import co.casterlabs.caffeineapi.serializers.InstantSerializer;
 import co.casterlabs.caffeineapi.serializers.UserBadgeSerializer;
-import co.casterlabs.caffeineapi.types.CaffeineUser.UserBadge;
+import co.casterlabs.caffeineapi.types.UserBadge;
 
 public class CaffeineApi {
     // @formatter:off
