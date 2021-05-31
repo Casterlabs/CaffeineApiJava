@@ -21,9 +21,9 @@ import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
-import co.casterlabs.caffeineapi.requests.CaffeineUser;
-import co.casterlabs.caffeineapi.requests.CaffeineUser.UserBadge;
 import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest;
+import co.casterlabs.caffeineapi.types.CaffeineUser;
+import co.casterlabs.caffeineapi.types.CaffeineUser.UserBadge;
 import lombok.Setter;
 
 public class CaffeineViewers implements Closeable {

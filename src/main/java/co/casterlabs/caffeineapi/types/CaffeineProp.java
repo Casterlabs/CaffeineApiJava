@@ -1,4 +1,4 @@
-package co.casterlabs.caffeineapi.requests;
+package co.casterlabs.caffeineapi.types;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;

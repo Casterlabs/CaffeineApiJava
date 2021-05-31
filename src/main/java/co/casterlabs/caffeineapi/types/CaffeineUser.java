@@ -1,4 +1,4 @@
-package co.casterlabs.caffeineapi.requests;
+package co.casterlabs.caffeineapi.types;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -74,7 +74,9 @@ public class CaffeineUser {
                     case "PARTNER1":
                         return CYAN;
 
-                    // Nobody is of these partner levels yet.
+                    // Caffeine has repurposed these badges for something else entirely.
+                    // However, I am not going to include them because they're probably
+                    // going to change them again in the future anyways ¯\_(ツ)_/¯
 
                     // case "PARTNER2":
 

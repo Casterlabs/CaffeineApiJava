@@ -22,10 +22,10 @@ import com.google.gson.JsonObject;
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
-import co.casterlabs.caffeineapi.requests.CaffeineUser.UserBadge;
+import co.casterlabs.caffeineapi.types.CaffeineUser.UserBadge;
 import lombok.Setter;
 
-public class CaffeineViewers_New implements Closeable {
+public class CaffeineViewersNewFormat implements Closeable {
     // Client type web, as for some reason this is the only way to bring in the
     // newer viewers format
     private static final String AUTH_LOGIN_HEADER = "{\"Headers\":{\"Authorization\":\"Bearer %s\",\"X-Client-Type\":\"web\"},\"Body\":\"{\\\"user\\\":\\\"%s\\\"}\"}";
@@ -49,7 +49,7 @@ public class CaffeineViewers_New implements Closeable {
 
     private @Setter @Nullable CaffeineViewersListener listener;
 
-    public CaffeineViewers_New(CaffeineAuth auth) {
+    public CaffeineViewersNewFormat(CaffeineAuth auth) {
         this.auth = auth;
 
         try {

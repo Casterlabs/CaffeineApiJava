@@ -1,16 +1,13 @@
 package co.casterlabs.caffeineapi.requests;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.annotations.SerializedName;
 
-import co.casterlabs.apiutil.ApiUtil;
 import co.casterlabs.apiutil.auth.ApiAuthException;
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.apiutil.web.AuthenticatedWebRequest;
@@ -18,15 +15,13 @@ import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.HttpUtil;
-import co.casterlabs.caffeineapi.requests.CaffeineFollowersListRequest.CaffeineFollower;
-import lombok.Getter;
+import co.casterlabs.caffeineapi.types.CaffeineFollow;
+import co.casterlabs.caffeineapi.types.CaffeineUser;
 import lombok.NonNull;
 import lombok.Setter;
-import lombok.SneakyThrows;
-import lombok.ToString;
 import okhttp3.Response;
 
-public class CaffeineFollowersListRequest extends AuthenticatedWebRequest<List<CaffeineFollower>, CaffeineAuth> {
+public class CaffeineFollowersListRequest extends AuthenticatedWebRequest<List<CaffeineFollow>, CaffeineAuth> {
     private boolean retrieveAll = false;
     private long offset = 0;
     private String caid;
@@ -55,22 +50,20 @@ public class CaffeineFollowersListRequest extends AuthenticatedWebRequest<List<C
     }
 
     @Override
-    protected List<CaffeineFollower> execute() throws ApiException, ApiAuthException, IOException {
-        List<CaffeineFollower> followers = new ArrayList<>();
+    protected List<CaffeineFollow> execute() throws ApiException, ApiAuthException, IOException {
+        List<CaffeineFollow> followers = new ArrayList<>();
 
         do {
             String url = String.format(CaffeineEndpoints.FOLLOWERS, this.caid, this.limit, this.offset);
-            Response response = HttpUtil.sendHttpGet(url, this.auth);
-            String body = response.body().string();
 
-            response.close();
+            try (Response response = HttpUtil.sendHttpGet(url, this.auth)) {
+                String body = response.body().string();
 
-            if (response.code() == 401) {
-                throw new ApiAuthException("Auth is invalid: " + body);
-            } else if (response.code() == 404) {
-                throw new ApiException("User does not exist: " + body);
-            } else {
-                try {
+                if (response.code() == 401) {
+                    throw new ApiAuthException("Auth is invalid: " + body);
+                } else if (response.code() == 404) {
+                    throw new ApiException("User does not exist: " + body);
+                } else {
                     JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
                     JsonArray array = json.getAsJsonArray("followers");
 
@@ -79,15 +72,12 @@ public class CaffeineFollowersListRequest extends AuthenticatedWebRequest<List<C
                     }
 
                     for (JsonElement e : array) {
-                        followers.add(CaffeineApi.GSON.fromJson(e, CaffeineFollower.class));
+                        followers.add(CaffeineApi.GSON.fromJson(e, CaffeineFollow.class));
                     }
-                } catch (Exception e) {
-                    ApiUtil.getErrorReporter().apiError(url, null, this.auth.getAuthHeaders(), body, response.headers().toMultimap(), e);
-                    throw e;
                 }
-            }
 
-            this.offset += 100;
+                this.offset += 100;
+            }
         } while (this.retrieveAll);
 
         return followers;
@@ -95,26 +85,6 @@ public class CaffeineFollowersListRequest extends AuthenticatedWebRequest<List<C
 
     public void setRetrieveAll(boolean retrieveAll) {
         this.retrieveAll = retrieveAll;
-    }
-
-    @Getter
-    @ToString
-    public static class CaffeineFollower {
-        @SerializedName("caid")
-        private String CAID;
-
-        @SerializedName("followed_at")
-        private Instant followedAt;
-
-        @SneakyThrows
-        public CaffeineUser getAsUser() {
-            CaffeineUserInfoRequest request = new CaffeineUserInfoRequest();
-
-            request.setCAID(this.CAID);
-
-            return request.send();
-        }
-
     }
 
 }

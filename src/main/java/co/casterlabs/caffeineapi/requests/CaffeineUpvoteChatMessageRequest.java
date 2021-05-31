@@ -29,19 +29,22 @@ public class CaffeineUpvoteChatMessageRequest extends AuthenticatedWebRequest<Vo
 
     @Override
     protected Void execute() throws ApiException, ApiAuthException, IOException {
-        Response response = HttpUtil.sendHttp("{}", String.format(CaffeineEndpoints.UPVOTE_MESSAGE, this.messageId), this.auth, "application/json");
+        try (Response response = HttpUtil.sendHttp(
+            "{}",
+            String.format(CaffeineEndpoints.UPVOTE_MESSAGE, this.messageId),
+            this.auth,
+            "application/json"
+        )) {
+            if (response.code() == 401) {
+                throw new ApiAuthException("Auth is invalid");
+            } else if (response.code() == 401) {
+                throw new ApiException("Unable to upvote a chat message due to an authentication error");
+            } else if (response.code() == 400) {
+                throw new IllegalArgumentException("Message id is invalid");
+            }
 
-        response.close();
-
-        if (response.code() == 401) {
-            throw new ApiAuthException("Auth is invalid");
-        } else if (response.code() == 401) {
-            throw new ApiException("Unable to upvote a chat message due to an authentication error");
-        } else if (response.code() == 400) {
-            throw new IllegalArgumentException("Message id is invalid");
+            return null;
         }
-
-        return null;
     }
 
 }

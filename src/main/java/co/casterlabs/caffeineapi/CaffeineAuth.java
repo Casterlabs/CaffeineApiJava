@@ -18,7 +18,7 @@ import okhttp3.Request.Builder;
 import okhttp3.Response;
 
 @Getter
-public class CaffeineAuth implements AuthProvider {
+public class CaffeineAuth implements AuthProvider, AutoCloseable {
     private static final long REFRESH_TIME = TimeUnit.MINUTES.toMillis(10);
 
     private static String anonymousCredential;
@@ -35,10 +35,11 @@ public class CaffeineAuth implements AuthProvider {
         Thread t = new Thread(() -> {
             try {
                 while (true) {
-                    Response response = HttpUtil.sendHttpGet("https://api.caffeine.tv/v1/credentials/anonymous", null);
-                    JsonObject json = CaffeineApi.GSON.fromJson(response.body().string(), JsonObject.class);
+                    try (Response response = HttpUtil.sendHttpGet("https://api.caffeine.tv/v1/credentials/anonymous", null)) {
+                        JsonObject json = CaffeineApi.GSON.fromJson(response.body().string(), JsonObject.class);
 
-                    anonymousCredential = json.get("credential").getAsString();
+                        anonymousCredential = json.get("credential").getAsString();
+                    }
 
                     Thread.sleep(REFRESH_TIME);
                 }
@@ -106,14 +107,16 @@ public class CaffeineAuth implements AuthProvider {
                     this.signedToken = signed.get("token").getAsString();
 
                     final long expectedLoginTimestamp = this.loginTimestamp;
-                    ThreadHelper.executeAsyncLater("Auth Refresh", () -> {
-                        // Prevent refresh spam.
-                        if (this.loginTimestamp == expectedLoginTimestamp) {
-                            try {
-                                this.login(this.refreshToken);
-                            } catch (ApiAuthException ignored) {}
-                        }
-                    }, REFRESH_TIME);
+                    ThreadHelper.executeAsyncLater(
+                        "Auth Refresh", () -> {
+                            // Prevent refresh spam.
+                            if (this.loginTimestamp == expectedLoginTimestamp) {
+                                try {
+                                    this.login(this.refreshToken);
+                                } catch (ApiAuthException ignored) {}
+                            }
+                        }, REFRESH_TIME
+                    );
 
                     this.authResponse = CaffeineAuthResponse.SUCCESS;
                 } else {
@@ -165,6 +168,12 @@ public class CaffeineAuth implements AuthProvider {
         }
 
         return anonymousCredential;
+    }
+
+    @Override
+    public void close() throws Exception {
+        this.loginTimestamp = -1;
+        this.refreshToken = null;
     }
 
 }

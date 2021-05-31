@@ -1,6 +1,6 @@
 package co.casterlabs.caffeineapi.realtime.messages;
 
-import co.casterlabs.caffeineapi.requests.CaffeineUser;
+import co.casterlabs.caffeineapi.types.CaffeineUser;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;

@@ -35,16 +35,6 @@ public class CaffeineSendChatMessageRequest extends AuthenticatedWebRequest<Void
         return this;
     }
 
-    public CaffeineSendChatMessageRequest setUser(String username) throws ApiAuthException, ApiException {
-        CaffeineUserInfoRequest request = new CaffeineUserInfoRequest();
-
-        request.setQuery(username);
-
-        this.stageId = request.send().getStageID();
-
-        return this;
-    }
-
     public CaffeineSendChatMessageRequest setCAID(@NonNull String caid) {
         this.stageId = caid.substring(4);
         return this;
@@ -65,15 +55,18 @@ public class CaffeineSendChatMessageRequest extends AuthenticatedWebRequest<Void
         post.addProperty("publisher", this.auth.getSignedToken());
         post.add("body", body);
 
-        Response response = HttpUtil.sendHttp(post.toString(), String.format(CaffeineEndpoints.CHAT_MESSAGE, this.stageId), this.auth, "application/json");
+        try (Response response = HttpUtil.sendHttp(
+            post.toString(),
+            String.format(CaffeineEndpoints.CHAT_MESSAGE, this.stageId),
+            this.auth,
+            "application/json"
+        )) {
+            if (response.code() == 401) {
+                throw new ApiAuthException("Auth is invalid");
+            }
 
-        response.close();
-
-        if (response.code() == 401) {
-            throw new ApiAuthException("Auth is invalid");
+            return null;
         }
-
-        return null;
     }
 
 }

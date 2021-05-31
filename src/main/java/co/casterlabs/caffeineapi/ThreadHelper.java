@@ -22,6 +22,7 @@ public class ThreadHelper {
         });
 
         t.setName(name + " - CaffeineApi Waiting Thread #" + threadCount++);
+        t.setDaemon(true);
         t.start();
 
         return t;

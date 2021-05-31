@@ -19,7 +19,7 @@ import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
-import co.casterlabs.caffeineapi.requests.CaffeineUser;
+import co.casterlabs.caffeineapi.types.CaffeineUser;
 import lombok.Setter;
 
 public class CaffeineQuery implements Closeable {

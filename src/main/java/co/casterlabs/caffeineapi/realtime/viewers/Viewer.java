@@ -2,7 +2,7 @@ package co.casterlabs.caffeineapi.realtime.viewers;
 
 import org.jetbrains.annotations.Nullable;
 
-import co.casterlabs.caffeineapi.requests.CaffeineUser;
+import co.casterlabs.caffeineapi.types.CaffeineUser;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;

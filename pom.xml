@@ -109,7 +109,7 @@
 		<dependency>
 			<groupId>com.github.casterlabs</groupId>
 			<artifactId>ApiUtil</artifactId>
-			<version>12ea2ba</version>
+			<version>a12e327</version> <!-- 1.3.0 -->
 			<scope>compile</scope>
 		</dependency>
         <dependency>
