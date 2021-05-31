@@ -1,7 +1,12 @@
 package co.casterlabs.caffeineapi.requests;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 import co.casterlabs.apiutil.auth.ApiAuthException;
 import co.casterlabs.apiutil.web.ApiException;
@@ -10,16 +15,14 @@ import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.HttpUtil;
-import co.casterlabs.caffeineapi.requests.CaffeineFollowingListRequest.CaffeineFollowingResponse;
 import co.casterlabs.caffeineapi.types.CaffeineFollow;
 import co.casterlabs.caffeineapi.types.CaffeineUser;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
-import lombok.ToString;
 import okhttp3.Response;
 
-public class CaffeineFollowingListRequest extends AuthenticatedWebRequest<CaffeineFollowingResponse, CaffeineAuth> {
+public class CaffeineFollowingListRequest extends AuthenticatedWebRequest<List<CaffeineFollow>, CaffeineAuth> {
+    private boolean retrieveAll = false;
     private String caid;
     private long offset = 0;
     private @Setter long limit = 0;
@@ -48,30 +51,37 @@ public class CaffeineFollowingListRequest extends AuthenticatedWebRequest<Caffei
     }
 
     @Override
-    protected CaffeineFollowingResponse execute() throws ApiException, ApiAuthException, IOException {
-        String url = String.format(CaffeineEndpoints.FOLLOWING, this.caid, this.limit, this.offset);
+    protected List<CaffeineFollow> execute() throws ApiException, ApiAuthException, IOException {
+        List<CaffeineFollow> following = new ArrayList<>();
 
-        try (Response response = HttpUtil.sendHttpGet(url, this.auth)) {
-            String body = response.body().string();
+        do {
+            String url = String.format(CaffeineEndpoints.FOLLOWING, this.caid, this.limit, this.offset);
 
-            response.close();
+            try (Response response = HttpUtil.sendHttpGet(url, this.auth)) {
+                String body = response.body().string();
 
-            if (response.code() == 401) {
-                throw new ApiAuthException("Auth is invalid: " + body);
-            } else if (response.code() == 404) {
-                throw new ApiException("User does not exist: " + body);
-            } else {
-                return CaffeineApi.GSON.fromJson(body, CaffeineFollowingResponse.class);
+                if (response.code() == 401) {
+                    throw new ApiAuthException("Auth is invalid: " + body);
+                } else if (response.code() == 404) {
+                    throw new ApiException("User does not exist: " + body);
+                } else {
+                    JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
+                    JsonArray array = json.getAsJsonArray("followers");
+
+                    if (array.size() == 0) {
+                        break;
+                    }
+
+                    for (JsonElement e : array) {
+                        following.add(CaffeineApi.GSON.fromJson(e, CaffeineFollow.class));
+                    }
+                }
+
+                this.offset += 100;
             }
-        }
-    }
+        } while (this.retrieveAll);
 
-    @Getter
-    @ToString
-    public static class CaffeineFollowingResponse {
-        private long offset;
-        private List<CaffeineFollow> following;
-
+        return following;
     }
 
 }
