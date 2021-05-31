@@ -13,13 +13,12 @@ import org.java_websocket.handshake.ServerHandshake;
 import org.java_websocket.protocols.Protocol;
 import org.jetbrains.annotations.Nullable;
 
-import com.google.gson.JsonObject;
-
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.types.CaffeineUser;
+import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.Setter;
 
 public class CaffeineQuery implements Closeable {
@@ -90,17 +89,18 @@ public class CaffeineQuery implements Closeable {
         public void onMessage(String raw) {
             try {
                 if (listener != null) {
-                    JsonObject message = CaffeineApi.GSON.fromJson(raw, JsonObject.class);
+                    JsonObject message = CaffeineApi.RSON.fromJson(raw, JsonObject.class);
 
                     if (message.get("type").getAsString().equalsIgnoreCase("data")) {
-                        JsonObject payload = message.getAsJsonObject("payload");
+                        JsonObject payload = message.getObject("payload");
 
                         if (payload.get("data").isJsonNull()) {
-                            throw new ApiException(payload.getAsJsonArray("errors").toString());
+                            throw new ApiException(payload.getArray("errors").toString());
                         } else {
-                            JsonObject data = payload.getAsJsonObject("data");
-                            JsonObject stageContainer = data.getAsJsonObject("stage");
-                            JsonObject stage = stageContainer.getAsJsonObject("stage");
+                            JsonObject stage = payload
+                                .getObject("data")
+                                .getObject("stage")
+                                .getObject("stage");
 
                             boolean isLive = stage.get("live").getAsBoolean();
                             String title = stage.get("title").getAsString();
@@ -109,7 +109,7 @@ public class CaffeineQuery implements Closeable {
                         }
                     }
                 }
-            } catch (ApiException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }

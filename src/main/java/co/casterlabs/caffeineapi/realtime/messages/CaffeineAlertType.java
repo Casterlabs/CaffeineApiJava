@@ -1,6 +1,6 @@
 package co.casterlabs.caffeineapi.realtime.messages;
 
-import com.google.gson.JsonElement;
+import co.casterlabs.rakurai.json.element.JsonElement;
 
 public enum CaffeineAlertType {
     REACTION,

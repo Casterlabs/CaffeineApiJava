@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
 import co.casterlabs.apiutil.auth.ApiAuthException;
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.apiutil.web.AuthenticatedWebRequest;
@@ -16,6 +12,10 @@ import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.HttpUtil;
 import co.casterlabs.caffeineapi.types.CaffeineProp;
+import co.casterlabs.rakurai.json.element.JsonArray;
+import co.casterlabs.rakurai.json.element.JsonElement;
+import co.casterlabs.rakurai.json.element.JsonObject;
+import co.casterlabs.rakurai.json.serialization.JsonParseException;
 import okhttp3.Response;
 
 public class CaffeinePropsListRequest extends AuthenticatedWebRequest<List<CaffeineProp>, CaffeineAuth> {
@@ -35,10 +35,10 @@ public class CaffeinePropsListRequest extends AuthenticatedWebRequest<List<Caffe
             if (response.code() == 401) {
                 throw new ApiAuthException("Auth is invalid: " + body);
             } else {
-                JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
-                JsonObject payload = json.getAsJsonObject("payload");
-                JsonObject digitalItems = payload.getAsJsonObject("digital_items");
-                JsonArray state = digitalItems.getAsJsonArray("state");
+                JsonObject json = CaffeineApi.RSON.fromJson(body, JsonObject.class);
+                JsonObject payload = json.getObject("payload");
+                JsonObject digitalItems = payload.getObject("digital_items");
+                JsonArray state = digitalItems.getArray("state");
 
                 List<CaffeineProp> list = new ArrayList<>();
 
@@ -48,6 +48,8 @@ public class CaffeinePropsListRequest extends AuthenticatedWebRequest<List<Caffe
 
                 return list;
             }
+        } catch (JsonParseException e) {
+            throw new ApiException(e);
         }
     }
 

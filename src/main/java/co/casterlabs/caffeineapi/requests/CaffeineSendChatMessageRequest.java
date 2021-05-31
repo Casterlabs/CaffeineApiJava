@@ -2,14 +2,13 @@ package co.casterlabs.caffeineapi.requests;
 
 import java.io.IOException;
 
-import com.google.gson.JsonObject;
-
 import co.casterlabs.apiutil.auth.ApiAuthException;
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.apiutil.web.AuthenticatedWebRequest;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.HttpUtil;
+import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -46,14 +45,10 @@ public class CaffeineSendChatMessageRequest extends AuthenticatedWebRequest<Void
             throw new NullPointerException("CAID or message is null.");
         }
 
-        JsonObject post = new JsonObject();
-        JsonObject body = new JsonObject();
-
-        body.addProperty("text", this.message);
-
-        post.addProperty("type", "reaction");
-        post.addProperty("publisher", this.auth.getSignedToken());
-        post.add("body", body);
+        JsonObject post = new JsonObject()
+            .put("type", "reaction")
+            .put("publisher", this.auth.getSignedToken())
+            .put("body", JsonObject.singleton("text", this.message));
 
         try (Response response = HttpUtil.sendHttp(
             post.toString(),

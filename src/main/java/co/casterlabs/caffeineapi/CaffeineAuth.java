@@ -7,11 +7,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
-
 import co.casterlabs.apiutil.auth.ApiAuthException;
 import co.casterlabs.apiutil.auth.AuthProvider;
+import co.casterlabs.rakurai.json.element.JsonObject;
+import co.casterlabs.rakurai.json.serialization.JsonParseException;
 import lombok.Getter;
 import lombok.NonNull;
 import okhttp3.Request.Builder;
@@ -36,14 +35,14 @@ public class CaffeineAuth implements AuthProvider, AutoCloseable {
             try {
                 while (true) {
                     try (Response response = HttpUtil.sendHttpGet("https://api.caffeine.tv/v1/credentials/anonymous", null)) {
-                        JsonObject json = CaffeineApi.GSON.fromJson(response.body().string(), JsonObject.class);
+                        JsonObject json = CaffeineApi.RSON.fromJson(response.body().string(), JsonObject.class);
 
                         anonymousCredential = json.get("credential").getAsString();
                     }
 
                     Thread.sleep(REFRESH_TIME);
                 }
-            } catch (JsonSyntaxException | IOException | InterruptedException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         });
@@ -54,29 +53,22 @@ public class CaffeineAuth implements AuthProvider, AutoCloseable {
     }
 
     public CaffeineAuthResponse login(@NonNull String username, @NonNull String password, @Nullable String twoFactor) throws ApiAuthException {
-        JsonObject request = new JsonObject();
-        JsonObject account = new JsonObject();
-
-        account.addProperty("username", username);
-        account.addProperty("password", password);
-
-        request.add("account", account);
+        JsonObject request = new JsonObject()
+            .put(
+                "account", new JsonObject()
+                    .put("username", username)
+                    .put("password", password)
+            );
 
         if (twoFactor != null) {
-            JsonObject mfa = new JsonObject();
-
-            mfa.addProperty("opt", twoFactor);
-
-            request.add("mfa", mfa);
+            request.put("mfa", JsonObject.singleton("opt", twoFactor));
         }
 
         return sendAuth(CaffeineEndpoints.SIGNIN, request);
     }
 
     public CaffeineAuthResponse login(@NonNull String refreshToken) throws ApiAuthException {
-        JsonObject request = new JsonObject();
-
-        request.addProperty("refresh_token", refreshToken);
+        JsonObject request = JsonObject.singleton("refresh_token", refreshToken);
 
         return sendAuth(CaffeineEndpoints.TOKEN, request);
     }
@@ -89,12 +81,12 @@ public class CaffeineAuth implements AuthProvider, AutoCloseable {
                 this.authResponse = CaffeineAuthResponse.INVALID;
             } else {
                 String body = authResponse.body().string();
-                JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
+                JsonObject json = CaffeineApi.RSON.fromJson(body, JsonObject.class);
 
-                if (json.has("next")) {
+                if (json.containsKey("next")) {
                     this.authResponse = CaffeineAuthResponse.AWAIT2FA;
-                } else if (json.has("credentials")) {
-                    JsonObject credentials = json.getAsJsonObject("credentials");
+                } else if (json.containsKey("credentials")) {
+                    JsonObject credentials = json.getObject("credentials");
 
                     this.refreshToken = credentials.get("refresh_token").getAsString();
                     this.accessToken = credentials.get("access_token").getAsString();
@@ -102,7 +94,7 @@ public class CaffeineAuth implements AuthProvider, AutoCloseable {
                     this.credential = credentials.get("credential").getAsString();
 
                     Response signedResponse = HttpUtil.sendHttpGet(String.format(CaffeineEndpoints.SIGNED, this.caid), this);
-                    JsonObject signed = CaffeineApi.GSON.fromJson(signedResponse.body().string(), JsonObject.class);
+                    JsonObject signed = CaffeineApi.RSON.fromJson(signedResponse.body().string(), JsonObject.class);
 
                     this.signedToken = signed.get("token").getAsString();
 
@@ -125,7 +117,7 @@ public class CaffeineAuth implements AuthProvider, AutoCloseable {
             }
 
             return this.authResponse;
-        } catch (IOException e) {
+        } catch (JsonParseException | IOException e) {
             throw new ApiAuthException(e);
         }
     }

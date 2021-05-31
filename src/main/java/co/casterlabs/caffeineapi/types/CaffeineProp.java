@@ -1,49 +1,50 @@
 package co.casterlabs.caffeineapi.types;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.annotations.SerializedName;
-
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
+import co.casterlabs.rakurai.json.annotating.JsonClass;
+import co.casterlabs.rakurai.json.annotating.JsonField;
+import co.casterlabs.rakurai.json.element.JsonElement;
+import co.casterlabs.rakurai.json.serialization.JsonParseException;
 import lombok.Getter;
 import lombok.ToString;
 
 @Getter
 @ToString
+@JsonClass(exposeAll = true)
 public class CaffeineProp {
     private String id;
 
     private String name;
 
-    @SerializedName("credits_per_item")
+    @JsonField("credits_per_item")
     private int credits = -1;
 
-    @SerializedName("gold_cost")
+    @JsonField("gold_cost")
     private int goldCost = -1;
 
-    @SerializedName("plural_name")
+    @JsonField("plural_name")
     private String pluralName;
 
-    @SerializedName("universal_video_prop_path")
+    @JsonField("universal_video_prop_path")
     private String universalVideoPropPath;
 
-    @SerializedName("preview_image_path")
+    @JsonField("preview_image_path")
     private String previewImagePath;
 
-    @SerializedName("static_image_path")
+    @JsonField("static_image_path")
     private String staticImagePath;
 
-    @SerializedName("web_asset_path")
+    @JsonField("web_asset_path")
     private String webAssetPath;
 
-    @SerializedName("scene_kit_path")
+    @JsonField("scene_kit_path")
     private String sceneKitPath;
 
     public static CaffeineProp fromJson(JsonElement element) throws ApiException {
         try {
-            CaffeineProp prop = CaffeineApi.GSON.fromJson(element, CaffeineProp.class);
+            CaffeineProp prop = CaffeineApi.RSON.fromJson(element, CaffeineProp.class);
 
             prop.universalVideoPropPath = CaffeineEndpoints.ASSETS + prop.universalVideoPropPath;
             prop.previewImagePath = CaffeineEndpoints.ASSETS + prop.previewImagePath;
@@ -51,7 +52,8 @@ public class CaffeineProp {
             prop.webAssetPath = CaffeineEndpoints.ASSETS + prop.webAssetPath;
             prop.sceneKitPath = CaffeineEndpoints.ASSETS + prop.sceneKitPath;
 
-            // The format from messages is different from the proplist api, so we detect that and adjust to it.
+            // The format from messages is different from the proplist api, so we detect
+            // that and adjust to it.
             if (prop.goldCost == -1) {
                 prop.goldCost = prop.credits / 3;
             } else {
@@ -59,8 +61,8 @@ public class CaffeineProp {
             }
 
             return prop;
-        } catch (JsonSyntaxException e) {
-            throw new ApiException("Could not parse CaffeineProp: " + element.toString(), e);
+        } catch (JsonParseException e) {
+            throw new ApiException(e);
         }
     }
 

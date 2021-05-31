@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
 import co.casterlabs.apiutil.auth.ApiAuthException;
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.apiutil.web.AuthenticatedWebRequest;
@@ -17,6 +13,10 @@ import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.HttpUtil;
 import co.casterlabs.caffeineapi.types.CaffeineFollow;
 import co.casterlabs.caffeineapi.types.CaffeineUser;
+import co.casterlabs.rakurai.json.element.JsonArray;
+import co.casterlabs.rakurai.json.element.JsonElement;
+import co.casterlabs.rakurai.json.element.JsonObject;
+import co.casterlabs.rakurai.json.serialization.JsonParseException;
 import lombok.NonNull;
 import lombok.Setter;
 import okhttp3.Response;
@@ -64,19 +64,21 @@ public class CaffeineFollowersListRequest extends AuthenticatedWebRequest<List<C
                 } else if (response.code() == 404) {
                     throw new ApiException("User does not exist: " + body);
                 } else {
-                    JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
-                    JsonArray array = json.getAsJsonArray("followers");
+                    JsonObject json = CaffeineApi.RSON.fromJson(body, JsonObject.class);
+                    JsonArray array = json.getArray("followers");
 
                     if (array.size() == 0) {
                         break;
                     }
 
                     for (JsonElement e : array) {
-                        followers.add(CaffeineApi.GSON.fromJson(e, CaffeineFollow.class));
+                        followers.add(CaffeineApi.RSON.fromJson(e, CaffeineFollow.class));
                     }
                 }
 
                 this.offset += 100;
+            } catch (JsonParseException e) {
+                throw new ApiException(e);
             }
         } while (this.retrieveAll);
 

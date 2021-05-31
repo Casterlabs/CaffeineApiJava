@@ -2,14 +2,15 @@ package co.casterlabs.caffeineapi.types;
 
 import java.util.List;
 
-import com.google.gson.annotations.SerializedName;
-
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
+import co.casterlabs.rakurai.json.annotating.JsonClass;
+import co.casterlabs.rakurai.json.annotating.JsonField;
 import lombok.Getter;
 import lombok.ToString;
 
 @Getter
 @ToString
+@JsonClass(exposeAll = true)
 public class CaffeineGame {
     private long id;
     private String name;
@@ -17,22 +18,22 @@ public class CaffeineGame {
     private String website;
     private boolean supported;
 
-    @SerializedName("icon_image_path")
+    @JsonField("icon_image_path")
     private String iconImagePath;
 
-    @SerializedName("banner_image_path")
+    @JsonField("banner_image_path")
     private String bannerImagePath;
 
-    @SerializedName("process_names")
+    @JsonField("process_names")
     private List<String> processNames;
 
-    @SerializedName("executable_name")
+    @JsonField("executable_name")
     private String excecutableName;
 
-    @SerializedName("window_title")
+    @JsonField("window_title")
     private String windowTitle;
 
-    @SerializedName("is_capture_software")
+    @JsonField("is_capture_software")
     private boolean isCaptureSoftware;
 
     public String getIconImagePath() {

@@ -1,11 +1,18 @@
 package co.casterlabs.caffeineapi.types;
 
-import com.google.gson.JsonElement;
+import org.jetbrains.annotations.Nullable;
 
+import co.casterlabs.rakurai.json.Rson;
+import co.casterlabs.rakurai.json.annotating.JsonClass;
+import co.casterlabs.rakurai.json.annotating.JsonSerializer;
+import co.casterlabs.rakurai.json.element.JsonElement;
+import co.casterlabs.rakurai.json.serialization.JsonParseException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NonNull;
 
 @AllArgsConstructor
+@JsonClass(serializer = Serializer.class)
 public enum UserBadge {
     NONE("https://raw.githubusercontent.com/Casterlabs/CaffeineApiJava/master/badges/none.png"),
     CASTER("https://raw.githubusercontent.com/Casterlabs/CaffeineApiJava/master/badges/caster.png"),
@@ -15,11 +22,11 @@ public enum UserBadge {
 
     private @Getter String imageLink;
 
-    public static UserBadge from(JsonElement element) {
-        if ((element == null) || element.isJsonNull()) {
+    public static UserBadge from(String str) {
+        if (str == null) {
             return NONE;
         } else {
-            switch (element.getAsString()) {
+            switch (str) {
                 case "CASTER":
                     return CASTER;
 
@@ -40,6 +47,19 @@ public enum UserBadge {
                 default:
                     return UNKNOWN;
             }
+        }
+    }
+
+}
+
+class Serializer implements JsonSerializer<UserBadge> {
+
+    @Override
+    public @Nullable UserBadge deserialize(@NonNull JsonElement value, @NonNull Class<?> type, @NonNull Rson rson) throws JsonParseException {
+        try {
+            return UserBadge.from(value.isJsonNull() ? null : value.getAsString());
+        } catch (Exception e) {
+            throw new JsonParseException(e);
         }
     }
 

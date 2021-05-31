@@ -12,15 +12,15 @@ import org.java_websocket.enums.ReadyState;
 import org.java_websocket.handshake.ServerHandshake;
 import org.jetbrains.annotations.Nullable;
 
-import com.google.gson.JsonObject;
-
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.types.CaffeineProp;
 import co.casterlabs.caffeineapi.types.CaffeineUser;
+import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.Setter;
+import lombok.SneakyThrows;
 
 public class CaffeineMessages implements Closeable {
     private static final String ANONYMOUS_LOGIN_HEADER = "{\"Headers\":{\"Authorization\":\"Anonymous Fish\",\"X-Client-Type\":\"api\"}}";
@@ -99,26 +99,27 @@ public class CaffeineMessages implements Closeable {
             }
         }
 
+        @SneakyThrows
         @Override
         public void onMessage(String raw) {
             try {
                 if (!raw.equals("\"THANKS\"") && (listener != null)) {
-                    JsonObject json = CaffeineApi.GSON.fromJson(raw, JsonObject.class);
+                    JsonObject json = CaffeineApi.RSON.fromJson(raw, JsonObject.class);
 
-                    if (!json.has("Compatibility-Mode") && json.has("type")) {
+                    if (!json.containsKey("Compatibility-Mode") && json.containsKey("type")) {
                         CaffeineAlertType type = CaffeineAlertType.fromJson(json.get("type"));
 
                         if (type != CaffeineAlertType.UNKNOWN) {
-                            CaffeineUser sender = CaffeineUser.fromJson(json.getAsJsonObject("publisher"));
-                            JsonObject body = json.getAsJsonObject("body");
+                            CaffeineUser sender = CaffeineUser.fromJson(json.getObject("publisher"));
+                            JsonObject body = json.getObject("body");
                             String id = getMessageId(json.get("id").getAsString());
 
                             switch (type) {
                                 case REACTION:
                                     ChatEvent chatEvent = new ChatEvent(sender, body.get("text").getAsString(), id);
 
-                                    if (json.has("endorsement_count")) {
-                                        listener.onUpvote((new UpvoteEvent(chatEvent, json.get("endorsement_count").getAsInt())));
+                                    if (json.containsKey("endorsement_count")) {
+                                        listener.onUpvote((new UpvoteEvent(chatEvent, json.getNumber("endorsement_count").intValue())));
                                     } else {
                                         listener.onChat(chatEvent);
                                     }
@@ -128,8 +129,8 @@ public class CaffeineMessages implements Closeable {
                                 case SHARE:
                                     ShareEvent shareEvent = new ShareEvent(sender, body.get("text").getAsString(), id);
 
-                                    if (json.has("endorsement_count")) {
-                                        listener.onUpvote((new UpvoteEvent(shareEvent, json.get("endorsement_count").getAsInt())));
+                                    if (json.containsKey("endorsement_count")) {
+                                        listener.onUpvote((new UpvoteEvent(shareEvent, json.getNumber("endorsement_count").intValue())));
                                     } else {
                                         listener.onShare(shareEvent);
                                     }
@@ -137,12 +138,12 @@ public class CaffeineMessages implements Closeable {
                                     return;
 
                                 case DIGITAL_ITEM:
-                                    JsonObject propJson = body.getAsJsonObject("digital_item");
+                                    JsonObject propJson = body.getObject("digital_item");
                                     CaffeineProp prop = CaffeineProp.fromJson(propJson);
-                                    PropEvent propEvent = new PropEvent(sender, body.get("text").getAsString(), id, propJson.get("count").getAsInt(), prop);
+                                    PropEvent propEvent = new PropEvent(sender, body.get("text").getAsString(), id, propJson.getNumber("count").intValue(), prop);
 
-                                    if (json.has("endorsement_count")) {
-                                        listener.onUpvote((new UpvoteEvent(propEvent, json.get("endorsement_count").getAsInt())));
+                                    if (json.containsKey("endorsement_count")) {
+                                        listener.onUpvote((new UpvoteEvent(propEvent, json.getNumber("endorsement_count").intValue())));
                                     } else {
                                         listener.onProp(propEvent);
                                     }
@@ -179,9 +180,10 @@ public class CaffeineMessages implements Closeable {
 
     }
 
+    @SneakyThrows
     private static String getMessageId(String b64) {
         byte[] bytes = Base64.getDecoder().decode(b64);
-        JsonObject json = CaffeineApi.GSON.fromJson(new String(bytes), JsonObject.class);
+        JsonObject json = CaffeineApi.RSON.fromJson(new String(bytes), JsonObject.class);
 
         return json.get("u").getAsString();
     }

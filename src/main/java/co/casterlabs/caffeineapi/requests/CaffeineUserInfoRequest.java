@@ -2,14 +2,14 @@ package co.casterlabs.caffeineapi.requests;
 
 import java.io.IOException;
 
-import com.google.gson.JsonObject;
-
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.apiutil.web.WebRequest;
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.HttpUtil;
 import co.casterlabs.caffeineapi.types.CaffeineUser;
+import co.casterlabs.rakurai.json.element.JsonObject;
+import co.casterlabs.rakurai.json.serialization.JsonParseException;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -40,11 +40,13 @@ public class CaffeineUserInfoRequest extends WebRequest<CaffeineUser> {
             if (response.code() == 404) {
                 throw new ApiException("User does not exist: " + body);
             } else {
-                JsonObject json = CaffeineApi.GSON.fromJson(body, JsonObject.class);
-                JsonObject user = json.getAsJsonObject("user");
+                JsonObject user = CaffeineApi.RSON.fromJson(body, JsonObject.class)
+                    .getObject("user");
 
                 return CaffeineUser.fromJson(user);
             }
+        } catch (JsonParseException e) {
+            throw new ApiException(e);
         }
     }
 

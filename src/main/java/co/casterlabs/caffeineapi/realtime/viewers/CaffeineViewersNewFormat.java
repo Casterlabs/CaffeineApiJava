@@ -15,15 +15,15 @@ import org.java_websocket.enums.ReadyState;
 import org.java_websocket.handshake.ServerHandshake;
 import org.jetbrains.annotations.Nullable;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.types.UserBadge;
+import co.casterlabs.rakurai.json.element.JsonArray;
+import co.casterlabs.rakurai.json.element.JsonElement;
+import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.Setter;
+import lombok.SneakyThrows;
 
 public class CaffeineViewersNewFormat implements Closeable {
     // Client type web, as for some reason this is the only way to bring in the
@@ -112,14 +112,15 @@ public class CaffeineViewersNewFormat implements Closeable {
             }
         }
 
+        @SneakyThrows
         @Override
         public void onMessage(String raw) {
             if (!raw.equals("\"THANKS\"") && (listener != null)) {
-                JsonObject json = CaffeineApi.GSON.fromJson(raw, JsonObject.class);
+                JsonObject json = CaffeineApi.RSON.fromJson(raw, JsonObject.class);
 
-                if (!json.has("Compatibility-Mode")) {
+                if (!json.containsKey("Compatibility-Mode")) {
                     if (json.get("departed_viewer_caids").isJsonArray()) {
-                        JsonArray departed = json.getAsJsonArray("departed_viewer_caids");
+                        JsonArray departed = json.getArray("departed_viewer_caids");
 
                         for (JsonElement e : departed) {
                             Viewer viewer = this.viewers.remove(e.getAsString());
@@ -131,19 +132,21 @@ public class CaffeineViewersNewFormat implements Closeable {
                     }
 
                     if (json.get("new_viewers").isJsonArray()) {
-                        JsonArray newViewers = json.getAsJsonArray("new_viewers");
+                        JsonArray newViewers = json.getArray("new_viewers");
 
                         for (JsonElement e : newViewers) {
-                            JsonObject newViewer = e.getAsJsonObject();
-                            JsonObject userDetails = newViewer.getAsJsonObject("user_details");
+                            JsonObject newViewer = e.getAsObject();
+                            JsonObject userDetails = newViewer.getObject("user_details");
+
+                            JsonElement badgeElement = userDetails.get("badge");
 
                             String imageLink = CaffeineEndpoints.IMAGES + userDetails.get("avatar_image_path").getAsString();
                             String username = userDetails.get("username").getAsString();
-                            UserBadge badge = UserBadge.from(userDetails.get("badge"));
+                            UserBadge badge = UserBadge.from(badgeElement.isJsonNull() ? null : badgeElement.getAsString());
                             String caid = userDetails.get("caid").getAsString();
 
                             ViewerDetails details = new ViewerDetails(caid, imageLink, badge, username);
-                            Viewer viewer = new Viewer(details, null, newViewer.get("joined_at").getAsLong());
+                            Viewer viewer = new Viewer(details, null, newViewer.getNumber("joined_at").longValue());
 
                             this.viewers.put(caid, viewer);
 
@@ -159,11 +162,11 @@ public class CaffeineViewersNewFormat implements Closeable {
                     }
 
                     if (listener != null) {
-                        JsonObject viewerCounts = json.getAsJsonObject("viewer_counts");
-                        int anonymousCount = viewerCounts.get("anonymous").getAsInt();
+                        JsonObject viewerCounts = json.getObject("viewer_counts");
+                        int anonymousCount = viewerCounts.getNumber("anonymous").intValue();
 
                         listener.onAnonymousCount(anonymousCount);
-                        listener.onTotalCount(viewerCounts.get("total").getAsInt());
+                        listener.onTotalCount(viewerCounts.getNumber("total").intValue());
 
                         List<Viewer> viewersList = new ArrayList<>();
 

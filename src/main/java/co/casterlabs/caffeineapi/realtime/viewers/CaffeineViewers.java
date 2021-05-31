@@ -15,8 +15,6 @@ import org.java_websocket.enums.ReadyState;
 import org.java_websocket.handshake.ServerHandshake;
 import org.jetbrains.annotations.Nullable;
 
-import com.google.gson.JsonObject;
-
 import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
@@ -24,7 +22,9 @@ import co.casterlabs.caffeineapi.CaffeineEndpoints;
 import co.casterlabs.caffeineapi.requests.CaffeineUserInfoRequest;
 import co.casterlabs.caffeineapi.types.CaffeineUser;
 import co.casterlabs.caffeineapi.types.UserBadge;
+import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.Setter;
+import lombok.SneakyThrows;
 
 public class CaffeineViewers implements Closeable {
     private static final String AUTH_LOGIN_HEADER = "{\"Headers\":{\"Authorization\":\"Bearer %s\",\"X-Client-Type\":\"api\"},\"Body\":\"{\\\"user\\\":\\\"%s\\\"}\"}";
@@ -111,14 +111,15 @@ public class CaffeineViewers implements Closeable {
             }
         }
 
+        @SneakyThrows
         @Override
         public void onMessage(String raw) {
             if (!raw.equals("\"THANKS\"") && (listener != null)) {
-                JsonObject json = CaffeineApi.GSON.fromJson(raw, JsonObject.class);
+                JsonObject json = CaffeineApi.RSON.fromJson(raw, JsonObject.class);
 
-                if (!json.has("Compatibility-Mode")) {
-                    if (json.has("anonymous_user_count")) {
-                        int anonymousCount = json.get("anonymous_user_count").getAsInt();
+                if (!json.containsKey("Compatibility-Mode")) {
+                    if (json.containsKey("anonymous_user_count")) {
+                        int anonymousCount = json.getNumber("anonymous_user_count").intValue();
 
                         // Oh yeah, pure jank.
                         if (this.lastAnonymousCount != anonymousCount) {
@@ -136,8 +137,8 @@ public class CaffeineViewers implements Closeable {
 
                             this.lastAnonymousCount = anonymousCount;
                         }
-                    } else if (json.has("user_event")) {
-                        JsonObject userEvent = json.getAsJsonObject("user_event");
+                    } else if (json.containsKey("user_event")) {
+                        JsonObject userEvent = json.getObject("user_event");
                         String caid = userEvent.get("caid").getAsString();
 
                         if (userEvent.get("is_viewing").getAsBoolean()) {

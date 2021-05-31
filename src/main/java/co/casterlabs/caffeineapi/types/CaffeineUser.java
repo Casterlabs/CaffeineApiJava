@@ -1,15 +1,17 @@
 package co.casterlabs.caffeineapi.types;
 
-import com.google.gson.JsonObject;
-import com.google.gson.annotations.SerializedName;
-
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
+import co.casterlabs.rakurai.json.annotating.JsonClass;
+import co.casterlabs.rakurai.json.annotating.JsonField;
+import co.casterlabs.rakurai.json.element.JsonObject;
+import co.casterlabs.rakurai.json.serialization.JsonParseException;
 import lombok.Getter;
 import lombok.ToString;
 
 @Getter
 @ToString
+@JsonClass(exposeAll = true)
 public class CaffeineUser {
     private String bio;
 
@@ -17,29 +19,29 @@ public class CaffeineUser {
 
     private UserBadge badge;
 
-    @SerializedName("name")
+    @JsonField("name")
     private String displayname;
 
-    @SerializedName("stage_id")
+    @JsonField("stage_id")
     private String stageID;
 
-    @SerializedName("broadcast_id")
+    @JsonField("broadcast_id")
     private String broadcastID;
 
-    @SerializedName("caid")
+    @JsonField("caid")
     private String CAID;
 
-    @SerializedName("followers_count")
+    @JsonField("followers_count")
     private long followersCount;
 
-    @SerializedName("following_count")
+    @JsonField("following_count")
     private long followingCount;
 
-    @SerializedName("avatar_image_path")
+    @JsonField("avatar_image_path")
     private String imageLink;
 
-    public static CaffeineUser fromJson(JsonObject user) {
-        CaffeineUser result = CaffeineApi.GSON.fromJson(user, CaffeineUser.class);
+    public static CaffeineUser fromJson(JsonObject user) throws JsonParseException {
+        CaffeineUser result = CaffeineApi.RSON.fromJson(user, CaffeineUser.class);
 
         // Caffeine's "no badge" is always null
         if (result.badge == null) {
