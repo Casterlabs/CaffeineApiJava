@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import org.jetbrains.annotations.Nullable;
 
+import co.casterlabs.caffeineapi.types.UserBadge;
 import co.casterlabs.rakurai.json.Rson;
 import co.casterlabs.rakurai.json.TypeResolver;
 import co.casterlabs.rakurai.json.element.JsonElement;
@@ -24,6 +25,17 @@ public class CaffeineApi {
                 return new JsonString(value.toString());
             }
         }, Instant.class)
+        .registerTypeResolver(new TypeResolver<UserBadge>() {
+            @Override
+            public @Nullable UserBadge resolve(@NonNull JsonElement value, @NonNull Class<?> type) {
+                return UserBadge.from(value.isJsonNull() ? null : value.getAsString());
+            }
+
+            @Override
+            public @Nullable JsonElement writeOut(@NonNull UserBadge value, @NonNull Class<?> type) {
+                return new JsonString(value.name());
+            }
+        }, UserBadge.class)
         .build();
 
 }
