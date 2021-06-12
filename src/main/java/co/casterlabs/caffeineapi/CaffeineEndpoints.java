@@ -14,7 +14,7 @@ public class CaffeineEndpoints {
     public static final String UPVOTE_MESSAGE = "https://realtime.caffeine.tv/v2/reaper/messages/%s/endorsements";
 
     // Realtime
-    public static final String CHAT = "wss://realtime.caffeine.tv/v2/reaper/stages/%s/messages";
+    public static final String CHAT = "wss://realtime.caffeine.tv/public/v2/reactions/stages/%s/messages";
     public static final String VIEWERS = "wss://realtime.caffeine.tv/v2/reaper/stages/%s/viewers";
     public static final String QUERY = "wss://realtime.caffeine.tv/public/graphql/query";
 

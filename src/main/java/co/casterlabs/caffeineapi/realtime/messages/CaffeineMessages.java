@@ -16,15 +16,16 @@ import co.casterlabs.apiutil.web.ApiException;
 import co.casterlabs.caffeineapi.CaffeineApi;
 import co.casterlabs.caffeineapi.CaffeineAuth;
 import co.casterlabs.caffeineapi.CaffeineEndpoints;
+import co.casterlabs.caffeineapi.realtime.CaffeineRealtimeHelper;
 import co.casterlabs.caffeineapi.types.CaffeineProp;
 import co.casterlabs.caffeineapi.types.CaffeineUser;
 import co.casterlabs.rakurai.json.element.JsonObject;
 import lombok.Setter;
 import lombok.SneakyThrows;
+import xyz.e3ndr.fastloggingframework.logging.FastLogger;
+import xyz.e3ndr.fastloggingframework.logging.LogLevel;
 
 public class CaffeineMessages implements Closeable {
-    private static final String ANONYMOUS_LOGIN_HEADER = "{\"Headers\":{\"Authorization\":\"Anonymous Fish\",\"X-Client-Type\":\"api\"}}";
-    private static final String AUTH_LOGIN_HEADER = "{\"Headers\":{\"Authorization\":\"Bearer %s\",\"X-Client-Type\":\"api\"},\"Body\":\"{\\\"user\\\":\\\"%s\\\"}\"}";
     private static final long CAFFEINE_KEEPALIVE = TimeUnit.SECONDS.toMillis(15);
 
     private @Setter @Nullable CaffeineMessagesListener listener;
@@ -81,6 +82,7 @@ public class CaffeineMessages implements Closeable {
     }
 
     private class Connection extends WebSocketClient {
+        private final FastLogger logger = new FastLogger("CaffeineMessages");
 
         public Connection(String stageId) throws URISyntaxException {
             super(new URI(String.format(CaffeineEndpoints.CHAT, stageId)));
@@ -88,11 +90,36 @@ public class CaffeineMessages implements Closeable {
 
         @Override
         public void onOpen(ServerHandshake handshakedata) {
+            JsonObject loginPayload = new JsonObject();
+            JsonObject loginHeaders = new JsonObject();
+
+            loginHeaders
+                // .put("X-Caffeine-Vendor-Identifier", "d3370eb6-2e83-4355-b31b-eef0a6813a15")
+                // .put("X-Client-Version", "1.2.4")
+                .put("X-Client-Type", "web");
+
             if (auth == null) {
-                this.send(ANONYMOUS_LOGIN_HEADER);
+                loginHeaders
+                    .put("Authorization", "Anonymous ANON-Fish")
+                    .put("X-Credential", CaffeineAuth.getAnonymousCredential());
             } else {
-                this.send(String.format(AUTH_LOGIN_HEADER, auth.getAccessToken(), auth.getSignedToken()));
+                loginHeaders
+                    .put("Authorization", "Bearer " + auth.getAccessToken())
+                    .put("X-Credential", auth.getCredential());
+
+                loginPayload.put(
+                    "Body",
+                    new JsonObject()
+                        .put("user", auth.getSignedToken())
+                        .toString()
+                );
             }
+
+            this.send(
+                loginPayload
+                    .put("Headers", loginHeaders)
+                    .toString()
+            );
 
             Thread t = new Thread(() -> {
                 while (this.isOpen()) {
@@ -114,6 +141,8 @@ public class CaffeineMessages implements Closeable {
         @SneakyThrows
         @Override
         public void onMessage(String raw) {
+            this.logger.log(LogLevel.TRACE, String.format(CaffeineRealtimeHelper.DEBUG_WS_RECIEVE, raw));
+
             try {
                 if (!raw.equals("\"THANKS\"") && (listener != null)) {
                     JsonObject json = CaffeineApi.RSON.fromJson(raw, JsonObject.class);
@@ -188,6 +217,14 @@ public class CaffeineMessages implements Closeable {
         @Override
         public void onError(Exception e) {
             e.printStackTrace();
+        }
+
+        @Override
+        public void send(String payload) {
+            payload = payload.replace("\n", "");
+
+            this.logger.log(LogLevel.TRACE, String.format(CaffeineRealtimeHelper.DEBUG_WS_SEND, payload));
+            super.send(payload);
         }
 
     }
